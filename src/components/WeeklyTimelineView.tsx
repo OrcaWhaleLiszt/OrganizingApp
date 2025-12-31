@@ -229,7 +229,7 @@ export default function WeeklyTimelineView({
     onDateChange(newDate);
   };
 
-  // Filter tasks within this week
+  // Filter tasks within this week - include both daily and weekly tasks
   const weekTasks = tasks.filter(task => {
     if (!task.startDate) return false;
     const taskDate = new Date(task.startDate);
@@ -240,6 +240,16 @@ export default function WeeklyTimelineView({
 
     return taskDate >= monday && taskDate <= sunday;
   });
+
+  // Determine if task should be shown as "filled in" (quick task style)
+  const shouldShowAsFilled = (task: Task) => {
+    if (task.originalViewMode === 'daily') {
+      return task.duration <= 4; // Daily tasks ≤ 4 hours show as filled
+    } else if (task.originalViewMode === 'weekly') {
+      return task.duration <= 1; // Weekly tasks ≤ 1 day show as filled
+    }
+    return false;
+  };
 
   // Auto-progress logic
   useEffect(() => {
@@ -457,8 +467,8 @@ export default function WeeklyTimelineView({
                           {/* Progress background overlay */}
                           <div
                             className="absolute inset-0 transition-all duration-300"
-                            style={{ 
-                              width: `${task.progress}%`,
+                            style={{
+                              width: `${shouldShowAsFilled(task) ? 100 : task.progress}%`,
                               backgroundColor: colors.fill,
                               borderRadius: '16px'
                             }}

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Task, ViewMode } from '../types';
 
 interface CreateTaskFormProps {
-  onSubmit: (task: Omit<Task, 'id' | 'urgency' | 'createdAt'>) => void;
+  onSubmit: (task: Omit<Task, 'id' | 'urgency' | 'createdAt' | 'originalViewMode'>) => void;
   viewMode: ViewMode;
   currentDate: Date;
 }

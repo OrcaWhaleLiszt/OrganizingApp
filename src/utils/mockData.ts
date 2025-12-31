@@ -21,6 +21,7 @@ export function generateMockTasks(): Task[] {
     completed: false,
     urgency: 0,
     createdAt: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000),
+    originalViewMode: 'daily' as const,
   };
   task1.urgency = calculateUrgency(task1);
 
@@ -35,6 +36,7 @@ export function generateMockTasks(): Task[] {
     completed: false,
     urgency: 0,
     createdAt: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000),
+    originalViewMode: 'daily' as const,
   };
   task2.urgency = calculateUrgency(task2);
 
@@ -49,6 +51,7 @@ export function generateMockTasks(): Task[] {
     completed: false,
     urgency: 0,
     createdAt: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),
+    originalViewMode: 'daily' as const,
   };
   task3.urgency = calculateUrgency(task3);
 
@@ -63,6 +66,7 @@ export function generateMockTasks(): Task[] {
     completed: false,
     urgency: 0,
     createdAt: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000),
+    originalViewMode: 'daily' as const,
   };
   task4.urgency = calculateUrgency(task4);
 
@@ -77,6 +81,7 @@ export function generateMockTasks(): Task[] {
     completed: false,
     urgency: 0,
     createdAt: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000),
+    originalViewMode: 'daily' as const,
   };
   task5.urgency = calculateUrgency(task5);
 
@@ -91,6 +96,7 @@ export function generateMockTasks(): Task[] {
     completed: false,
     urgency: 0,
     createdAt: new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000),
+    originalViewMode: 'daily' as const,
   };
   task6.urgency = calculateUrgency(task6);
 
@@ -105,6 +111,7 @@ export function generateMockTasks(): Task[] {
     completed: false,
     urgency: 0,
     createdAt: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000),
+    originalViewMode: 'daily' as const,
   };
   task7.urgency = calculateUrgency(task7);
   
@@ -121,6 +128,7 @@ export function generateMockTasks(): Task[] {
     completed: false,
     urgency: 0,
     createdAt: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000),
+    originalViewMode: 'weekly' as const,
   };
   task8.urgency = calculateUrgency(task8);
 

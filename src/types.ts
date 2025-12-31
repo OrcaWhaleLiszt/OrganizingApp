@@ -8,6 +8,7 @@ export interface Task {
   urgency: number; // automatically calculated
   completed: boolean; // marked as done
   createdAt: Date;
+  originalViewMode: ViewMode; // which view mode the task was created in
 }
 
 export type ViewMode = 'daily' | 'weekly' | 'monthly';

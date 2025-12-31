@@ -14,10 +14,10 @@ interface TimelineBarProps {
   isActive?: boolean; // Whether red line is over this task
 }
 
-export default function TimelineBar({ 
-  task, 
-  startPosition, 
-  width, 
+export default function TimelineBar({
+  task,
+  startPosition,
+  width,
   onProgressChange,
   onDurationChange,
   onStartTimeChange,
@@ -25,6 +25,19 @@ export default function TimelineBar({
   isActive = false
 }: TimelineBarProps) {
   const isQuickTask = task.duration < 0.5;
+
+  // Check if task should be shown as filled (completely filled progress bar)
+  const isFilledTask = (() => {
+    // This logic mirrors the shouldShowAsFilled functions in the timeline views
+    // We check based on the current context, but for now we'll determine based on duration thresholds
+    if (task.originalViewMode === 'daily' && task.duration <= 4) return true;
+    if (task.originalViewMode === 'weekly' && task.duration <= 1) return true;
+    if (task.originalViewMode === 'monthly' && task.duration <= 1) return true;
+    return false;
+  })();
+
+  // For filled tasks, show 100% progress
+  const displayProgress = isFilledTask ? 100 : task.progress;
   
   // Get colors based on importance (1-10 scale)
   const colors = getImportanceColor(task.importance);
@@ -193,7 +206,7 @@ export default function TimelineBar({
             <div
               className="absolute inset-0 transition-all duration-300 pointer-events-none"
               style={{ 
-                width: `${task.progress}%`,
+                width: `${displayProgress}%`,
                 borderRadius: '12px',
                 backgroundColor: colors.progress,
                 zIndex: 0,
@@ -247,8 +260,9 @@ export default function TimelineBar({
               type="range"
               min="0"
               max="100"
-              value={task.progress}
+              value={displayProgress}
               onChange={handleProgressChange}
+              disabled={isFilledTask}
               className="absolute opacity-0 z-10"
               style={{ 
                 cursor: isHoveringEdge ? 'ew-resize' : isHoveringHandle ? 'move' : 'pointer',

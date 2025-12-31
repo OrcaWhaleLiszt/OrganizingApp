@@ -25,6 +25,7 @@ export function loadTasks(): Task[] {
       ...task,
       startDate: task.startDate ? new Date(task.startDate) : null,
       createdAt: new Date(task.createdAt),
+      originalViewMode: task.originalViewMode || 'daily', // fallback for old data
     }));
   } catch (error) {
     console.error('Failed to load tasks:', error);

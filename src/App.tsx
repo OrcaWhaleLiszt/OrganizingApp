@@ -44,13 +44,14 @@ function App() {
     }
   }, [tasks]);
 
-  const handleCreateTask = (taskData: Omit<Task, 'id' | 'urgency' | 'createdAt' | 'completed'>) => {
+  const handleCreateTask = (taskData: Omit<Task, 'id' | 'urgency' | 'createdAt' | 'completed' | 'originalViewMode'>) => {
     const newTask: Task = {
       ...taskData,
       id: Date.now().toString(),
       urgency: calculateUrgency(taskData as Task),
       completed: false,
       createdAt: new Date(),
+      originalViewMode: viewMode,
     };
     setTasks([...tasks, newTask]);
     setIsCreateTaskOpen(false); // Close the form after creating a task
