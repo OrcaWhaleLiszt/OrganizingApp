@@ -14,10 +14,11 @@ interface MonthlyTimelineViewProps {
   currentDate: Date;
   onDateChange: (date: Date) => void;
   mobileView?: 'checklist' | 'calendar'; // For mobile-only tab switching
+  autoProgressEnabled?: boolean;
 }
 
-export default function MonthlyTimelineView({ 
-  tasks, 
+export default function MonthlyTimelineView({
+  tasks,
   onProgressChange,
   onDurationChange,
   onStartTimeChange,
@@ -25,7 +26,8 @@ export default function MonthlyTimelineView({
   onDeleteTask,
   currentDate,
   onDateChange,
-  mobileView = 'checklist'
+  mobileView = 'checklist',
+  autoProgressEnabled = false
 }: MonthlyTimelineViewProps) {
   const [menuOpenTaskId, setMenuOpenTaskId] = useState<string | null>(null);
   const [currentTimePosition, setCurrentTimePosition] = useState<number>(25); // Position as percentage (0-100)
@@ -71,24 +73,22 @@ export default function MonthlyTimelineView({
   // Calculate task status based on red line position
   const getTaskStatus = (task: Task) => {
     if (!task.startDate) return 'not scheduled';
-    
+
     const taskStart = new Date(task.startDate);
     const taskEnd = new Date(taskStart.getTime() + task.duration * 60 * 60 * 1000);
-    
-    // Calculate position in timeline (0-100%) for the month
+
+    // Calculate timeline position relative to task
     const monthStart = new Date(year, month, 1);
     const monthEnd = new Date(year, month + 1, 0);
     const totalMonthTime = monthEnd.getTime() - monthStart.getTime();
-    
     const taskStartPercent = ((taskStart.getTime() - monthStart.getTime()) / totalMonthTime) * 100;
     const taskEndPercent = ((taskEnd.getTime() - monthStart.getTime()) / totalMonthTime) * 100;
-    
-    // Current time line position
-    const currentPos = currentTimePosition;
-    
+
+    const timelinePos = currentTimePosition;
+
     // Check if task is completed
     if (task.progress === 100) {
-      const hoursAgo = ((currentPos - taskEndPercent) / 100) * (totalMonthTime / (1000 * 60 * 60));
+      const hoursAgo = ((timelinePos - taskEndPercent) / 100) * (totalMonthTime / (1000 * 60 * 60));
       if (hoursAgo > 0) {
         if (hoursAgo >= 24) {
           return `done ${Math.round(hoursAgo / 24)}d ago`;
@@ -97,23 +97,39 @@ export default function MonthlyTimelineView({
       }
       return 'completed';
     }
-    
-    // Check if task is behind the line (should be done)
-    if (currentPos > taskEndPercent) {
-      const hoursOverdue = ((currentPos - taskEndPercent) / 100) * (totalMonthTime / (1000 * 60 * 60));
-      if (hoursOverdue >= 24) {
-        return `${Math.round(hoursOverdue / 24)}d overdue`;
+
+    // Timeline is before task starts
+    if (timelinePos < taskStartPercent) {
+      const hoursUntil = ((taskStartPercent - timelinePos) / 100) * (totalMonthTime / (1000 * 60 * 60));
+      if (hoursUntil >= 24) {
+        return `in ${Math.round(hoursUntil / 24)}d`;
       }
-      return `${Math.round(hoursOverdue)}h overdue`;
+      if (hoursUntil >= 1) {
+        return `in ${Math.round(hoursUntil)}h`;
+      }
+      return `in ${Math.round(hoursUntil * 60)}m`;
     }
-    
-    // Check if task is currently active (red line is within task)
-    if (currentPos >= taskStartPercent && currentPos <= taskEndPercent) {
-      // Calculate time remaining
+
+    // Timeline is over the task (active or past)
+    if (timelinePos >= taskStartPercent) {
+      // If timeline is past task end and not completed
+      if (timelinePos > taskEndPercent) {
+        const hoursOverdue = ((timelinePos - taskEndPercent) / 100) * (totalMonthTime / (1000 * 60 * 60));
+        if (hoursOverdue >= 24) {
+          return `overdue ${Math.round(hoursOverdue / 24)}d`;
+        }
+        if (hoursOverdue >= 1) {
+          return `overdue ${Math.round(hoursOverdue)}h`;
+        }
+        return `overdue ${Math.round(hoursOverdue * 60)}m`;
+      }
+
+      // Timeline is within task - show time remaining based on progress
       const totalDuration = task.duration * 60; // in minutes
-      const timeElapsed = ((currentPos - taskStartPercent) / (taskEndPercent - taskStartPercent)) * totalDuration;
-      const timeRemaining = totalDuration - timeElapsed;
-      
+      const progressPercent = task.progress / 100;
+      const timeRemaining = totalDuration * (1 - progressPercent);
+
+      // Format time remaining
       if (timeRemaining >= 1440) { // >= 1 day
         const days = Math.floor(timeRemaining / 1440);
         const hours = Math.round((timeRemaining % 1440) / 60);
@@ -132,31 +148,7 @@ export default function MonthlyTimelineView({
       }
       return `${Math.round(timeRemaining)}m left`;
     }
-    
-    // Check if task is behind the line (should be done)
-    if (currentPos > taskEndPercent) {
-      const hoursOverdue = ((currentPos - taskEndPercent) / 100) * (totalMonthTime / (1000 * 60 * 60));
-      if (hoursOverdue >= 24) {
-        return `overdue ${Math.round(hoursOverdue / 24)}d`;
-      }
-      if (hoursOverdue >= 1) {
-        return `overdue ${Math.round(hoursOverdue)}h`;
-      }
-      return `overdue ${Math.round(hoursOverdue * 60)}m`;
-    }
-    
-    // Task is in the future
-    if (currentPos < taskStartPercent) {
-      const hoursUntil = ((taskStartPercent - currentPos) / 100) * (totalMonthTime / (1000 * 60 * 60));
-      if (hoursUntil >= 24) {
-        return `in ${Math.round(hoursUntil / 24)}d`;
-      }
-      if (hoursUntil >= 1) {
-        return `in ${Math.round(hoursUntil)}h`;
-      }
-      return `in ${Math.round(hoursUntil * 60)}m`;
-    }
-    
+
     return 'pending';
   };
 
@@ -207,6 +199,7 @@ export default function MonthlyTimelineView({
       };
     }
   }, [isDraggingTimeLine]);
+
   
   // Get first and last day of current month
   const lastDay = new Date(year, month + 1, 0);
@@ -219,6 +212,38 @@ export default function MonthlyTimelineView({
     const taskDate = new Date(task.startDate);
     return taskDate.getMonth() === month && taskDate.getFullYear() === year;
   });
+
+  // Auto-progress logic
+  useEffect(() => {
+    if (autoProgressEnabled && !isDraggingTimeLine) {
+      // Find tasks that the timeline is currently over
+      monthTasks.forEach(task => {
+        if (task.progress === 100 || !task.startDate) return; // Skip completed tasks and tasks without start date
+
+        const taskStart = new Date(task.startDate);
+        const taskEnd = new Date(taskStart.getTime() + task.duration * 60 * 60 * 1000);
+
+        const monthStart = new Date(year, month, 1);
+        const monthEnd = new Date(year, month + 1, 0);
+        const totalMonthTime = monthEnd.getTime() - monthStart.getTime();
+
+        const taskStartPercent = ((taskStart.getTime() - monthStart.getTime()) / totalMonthTime) * 100;
+        const taskEndPercent = ((taskEnd.getTime() - monthStart.getTime()) / totalMonthTime) * 100;
+
+        // If timeline is within this task
+        if (currentTimePosition >= taskStartPercent && currentTimePosition <= taskEndPercent) {
+          // Calculate expected progress based on timeline position
+          const taskProgress = ((currentTimePosition - taskStartPercent) / (taskEndPercent - taskStartPercent)) * 100;
+          const expectedProgress = Math.round(Math.max(0, Math.min(100, taskProgress)));
+
+          // Only update if significantly different (avoid constant updates)
+          if (Math.abs(task.progress - expectedProgress) > 2) {
+            onProgressChange(task.id, expectedProgress);
+          }
+        }
+      });
+    }
+  }, [currentTimePosition, autoProgressEnabled, monthTasks, year, month, onProgressChange, isDraggingTimeLine]);
 
   // Calculate positions for each task
   const getTaskPosition = (task: Task) => {
@@ -292,17 +317,33 @@ export default function MonthlyTimelineView({
                     const minHeight = 32;
                     const height = Math.max(minHeight, Math.min(maxHeight, 400 / monthTasks.length));
                     
-                    // Check if task is overdue (past time and not completed)
-                    const isOverdue = task.startDate && task.progress < 100 && (() => {
+                    // Determine clock icon status based on timeline position
+                    const getClockStatus = () => {
+                      if (!task.startDate || task.progress === 100) return null;
+
                       const taskStart = new Date(task.startDate);
                       const taskEnd = new Date(taskStart.getTime() + task.duration * 60 * 60 * 1000);
+
+                      // Calculate position in timeline
                       const monthStart = new Date(year, month, 1);
                       const monthEnd = new Date(year, month + 1, 0);
                       const totalMonthTime = monthEnd.getTime() - monthStart.getTime();
                       const taskEndPercent = ((taskEnd.getTime() - monthStart.getTime()) / totalMonthTime) * 100;
-                      return currentTimePosition > taskEndPercent;
-                    })();
-                    
+
+                      if (currentTimePosition > taskEndPercent) {
+                        // Task is overdue based on timeline
+                        if (task.progress === 0) {
+                          return 'red'; // No progress, red clock
+                        } else {
+                          return 'yellow'; // Some progress, yellow clock
+                        }
+                      }
+
+                      return null; // Not overdue, no clock
+                    };
+
+                    const clockColor = getClockStatus();
+
                     // Checkbox only shows when task is completed
                     const showCheckbox = task.progress === 100;
                     
@@ -339,8 +380,8 @@ export default function MonthlyTimelineView({
                         )}
                         
                         {/* Clock icon - for overdue tasks that are not completed */}
-                        {isOverdue && (
-                          <Clock className="w-4 h-4 text-red-500 opacity-60" />
+                        {clockColor && (
+                          <Clock className={`w-4 h-4 opacity-60 ${clockColor === 'red' ? 'text-red-500' : 'text-yellow-500'}`} />
                         )}
                       </div>
                     );
@@ -366,7 +407,13 @@ export default function MonthlyTimelineView({
                         <div
                           className={`relative flex items-center gap-2 px-2 border border-gray-200 hover:bg-gray-50 overflow-hidden w-full transition-shadow
                             ${isTaskActive(task) ? 'shadow-lg' : ''}`}
-                          style={{ height: `${height}px`, borderRadius: '16px', backgroundColor: 'white' }}
+                          style={{
+                            height: `${height}px`,
+                            borderRadius: '16px',
+                            backgroundColor: 'white',
+                            opacity: task.completed ? 0.25 : 1,
+                            transition: 'opacity 0.3s ease'
+                          }}
                         >
                           {/* Progress background overlay */}
                           <div

@@ -2,17 +2,21 @@ import { Task } from '../types';
 
 export function calculateUrgency(task: Task): number {
   if (!task.startDate || !task.duration) return 0;
-  
-  const endDate = new Date(task.startDate);
-  endDate.setDate(endDate.getDate() + task.duration);
-  const daysUntilStart = Math.ceil((task.startDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-  
-  // High urgency if close to starting or ending
-  if (daysUntilStart <= 0) return 5; // Should have already started
-  if (daysUntilStart <= 3) return 4; // Very soon
-  if (daysUntilStart <= 7) return 3; // Soon
-  if (daysUntilStart <= 14) return 2; // Moderate
-  return 1; // Low
+
+  const now = Date.now();
+  const startTime = task.startDate.getTime();
+  const endTime = task.startDate.getTime() + task.duration * 60 * 60 * 1000; // duration is in hours
+
+  const hoursUntilStart = Math.ceil((startTime - now) / (1000 * 60 * 60));
+  const hoursUntilEnd = Math.ceil((endTime - now) / (1000 * 60 * 60));
+
+  // High urgency if already overdue or ending soon
+  if (hoursUntilEnd <= 0) return 5; // Already overdue
+  if (hoursUntilStart <= 0) return 4; // Already started, ending soon
+  if (hoursUntilStart <= 24) return 4; // Starting within 24 hours
+  if (hoursUntilStart <= 72) return 3; // Starting within 3 days
+  if (hoursUntilStart <= 168) return 2; // Starting within 1 week
+  return 1; // Low urgency
 }
 
 export function getUrgencyColor(urgency: number): string {

@@ -3,7 +3,7 @@ export interface Task {
   title: string;
   importance: number; // 1-10
   startDate: Date | null;
-  duration: number; // in hours or days
+  duration: number; // in hours for daily/weekly views, in days for monthly view
   progress: number; // 0-100
   urgency: number; // automatically calculated
   completed: boolean; // marked as done

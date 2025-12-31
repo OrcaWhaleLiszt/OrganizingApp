@@ -17,6 +17,7 @@ function App() {
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [mobileView, setMobileView] = useState<'checklist' | 'calendar'>('checklist'); // For mobile only
+  const [autoProgressEnabled, setAutoProgressEnabled] = useState(false);
 
   // Load tasks on mount
   useEffect(() => {
@@ -134,6 +135,7 @@ function App() {
             onDateChange={setCurrentDate}
             dayStartHour={4}
             mobileView={mobileView}
+            autoProgressEnabled={autoProgressEnabled}
           />
         );
       case 'weekly':
@@ -148,6 +150,7 @@ function App() {
             currentDate={currentDate}
             onDateChange={setCurrentDate}
             mobileView={mobileView}
+            autoProgressEnabled={autoProgressEnabled}
           />
         );
       case 'monthly':
@@ -162,6 +165,7 @@ function App() {
             currentDate={currentDate}
             onDateChange={setCurrentDate}
             mobileView={mobileView}
+            autoProgressEnabled={autoProgressEnabled}
           />
         );
       default:
@@ -171,50 +175,42 @@ function App() {
 
   return (
     <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
-      <SortBar 
-        sortBy={sortBy} 
-        sortOrder={sortOrder} 
+      <SortBar
+        sortBy={sortBy}
+        sortOrder={sortOrder}
         onSort={handleSort}
         viewMode={viewMode}
         onViewChange={setViewMode}
+        onLoadMockData={handleLoadMockData}
+        autoProgressEnabled={autoProgressEnabled}
+        onToggleAutoProgress={() => setAutoProgressEnabled(!autoProgressEnabled)}
       />
       
       <div className="flex-1 flex flex-col max-w-7xl mx-auto px-4 pt-4 w-full overflow-hidden">
         {filteredTasks.length > 0 && (
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-center mb-2">
             {/* Checklist and Calendar labels/tabs */}
-            <div className="flex-1 flex">
+            <div className="flex">
               {/* Checklist tab - left half */}
               <button
                 onClick={() => setMobileView('checklist')}
-                className={`flex-1 text-center py-2 font-semibold text-sm transition-colors md:cursor-default
+                className={`flex-1 text-center py-2 px-8 font-semibold text-sm transition-colors md:cursor-default
                   ${mobileView === 'checklist' ? 'text-blue-500 md:text-gray-800' : 'text-gray-800'}
                   md:text-gray-800 md:pointer-events-none`}
-                style={{ maxWidth: '50%' }}
               >
                 Checklist
               </button>
-              
+
               {/* Calendar tab - right half */}
               <button
                 onClick={() => setMobileView('calendar')}
-                className={`flex-1 text-center py-2 font-semibold text-sm transition-colors md:cursor-default
+                className={`flex-1 text-center py-2 px-8 font-semibold text-sm transition-colors md:cursor-default
                   ${mobileView === 'calendar' ? 'text-blue-500 md:text-gray-800' : 'text-gray-800'}
                   md:text-gray-800 md:pointer-events-none`}
-                style={{ maxWidth: '50%' }}
               >
                 Calendar
               </button>
             </div>
-
-            {/* Reload Mock Data button */}
-            <button
-              onClick={handleLoadMockData}
-              className="px-3 py-1 bg-gray-200 text-gray-700 rounded text-xs hover:bg-gray-300 transition-colors flex-shrink-0 ml-4"
-              title="Reload mock data"
-            >
-              🔄 Reload Mock Data
-            </button>
           </div>
         )}
         
