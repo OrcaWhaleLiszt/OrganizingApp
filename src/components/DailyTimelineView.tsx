@@ -189,6 +189,9 @@ export default function DailyTimelineView({
     return taskDate.getTime() === targetDate.getTime();
   });
 
+  // Check if task is a subtask (≤30 minutes)
+  const isSubtask = (task: Task) => task.duration <= 0.5;
+
   // Auto-progress logic
   useEffect(() => {
     if (autoProgressEnabled) {
@@ -331,7 +334,9 @@ export default function DailyTimelineView({
                     // Calculate same dynamic height to match task cards
                     const maxHeight = 60;
                     const minHeight = 32;
-                    const height = Math.max(minHeight, Math.min(maxHeight, 400 / todayTasks.length));
+                    // Calculate height: subtasks are 50% height of regular tasks
+                    const baseHeight = Math.max(minHeight, Math.min(maxHeight, 400 / todayTasks.length));
+                    const height = isSubtask(task) ? Math.max(minHeight * 0.5, baseHeight * 0.5) : baseHeight;
                     
                     // Determine clock icon status based on timeline position
                     const getClockStatus = () => {
@@ -361,13 +366,13 @@ export default function DailyTimelineView({
 
                     const clockColor = getClockStatus();
 
-                    // Checkbox only shows when task is completed
-                    const showCheckbox = task.progress === 100;
+                    // Checkbox shows for completed tasks or subtasks (which are always assumed completed)
+                    const showCheckbox = task.progress === 100 || isSubtask(task);
                     
                     return (
-                      <div 
+                      <div
                         key={task.id}
-                        className="flex items-center justify-center"
+                        className={`flex items-center justify-center ${isSubtask(task) ? 'justify-center' : ''}`}
                         style={{ height: `${height}px` }}
                       >
                         {/* Checkbox - only for completed tasks */}
@@ -413,7 +418,9 @@ export default function DailyTimelineView({
                     // Calculate dynamic height based on totalTasks
                     const maxHeight = 60;
                     const minHeight = 32;
-                    const height = Math.max(minHeight, Math.min(maxHeight, 400 / todayTasks.length));
+                    // Calculate height: subtasks are 50% height of regular tasks
+                    const baseHeight = Math.max(minHeight, Math.min(maxHeight, 400 / todayTasks.length));
+                    const height = isSubtask(task) ? Math.max(minHeight * 0.5, baseHeight * 0.5) : baseHeight;
                     
                     // Get importance color (same as timeline bars)
                     const colors = getImportanceColor(task.importance);
@@ -465,9 +472,9 @@ export default function DailyTimelineView({
                               className="flex-shrink-0 text-gray-500 hover:text-gray-700 pointer-events-auto"
                             >
                               <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
-                                <circle cx="8" cy="3" r="1.5" />
-                                <circle cx="8" cy="8" r="1.5" />
-                                <circle cx="8" cy="13" r="1.5" />
+                                <circle cx="8" cy="6" r="1.5" />
+                                <circle cx="8" cy="10" r="1.5" />
+                                {!isSubtask(task) && <circle cx="8" cy="14" r="1.5" />}
                               </svg>
                             </button>
                             
@@ -520,7 +527,9 @@ export default function DailyTimelineView({
                     // Calculate same dynamic height to match task cards
                     const maxHeight = 60;
                     const minHeight = 32;
-                    const height = Math.max(minHeight, Math.min(maxHeight, 400 / todayTasks.length));
+                    // Calculate height: subtasks are 50% height of regular tasks
+                    const baseHeight = Math.max(minHeight, Math.min(maxHeight, 400 / todayTasks.length));
+                    const height = isSubtask(task) ? Math.max(minHeight * 0.5, baseHeight * 0.5) : baseHeight;
                     
                     const status = getTaskStatus(task);
                     

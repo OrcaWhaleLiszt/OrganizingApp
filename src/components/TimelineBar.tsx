@@ -25,11 +25,13 @@ export default function TimelineBar({
   isActive = false
 }: TimelineBarProps) {
   const isQuickTask = task.duration < 0.5;
+  const isSubtask = task.duration <= 0.5; // Subtasks are ≤30 minutes
 
   // Check if task should be shown as filled (completely filled progress bar)
   const isFilledTask = (() => {
+    // Subtasks are always filled
+    if (isSubtask) return true;
     // This logic mirrors the shouldShowAsFilled functions in the timeline views
-    // We check based on the current context, but for now we'll determine based on duration thresholds
     if (task.originalViewMode === 'daily' && task.duration <= 4) return true;
     if (task.originalViewMode === 'weekly' && task.duration <= 1) return true;
     if (task.originalViewMode === 'monthly' && task.duration <= 1) return true;
@@ -52,7 +54,8 @@ export default function TimelineBar({
   // Dynamic height: taller when few tasks, shorter when many
   const maxHeight = 60;
   const minHeight = 32;
-  const height = Math.max(minHeight, Math.min(maxHeight, 400 / totalTasks));
+  const baseHeight = Math.max(minHeight, Math.min(maxHeight, 400 / totalTasks));
+  const height = isSubtask ? Math.max(minHeight * 0.5, baseHeight * 0.5) : baseHeight;
 
   const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onProgressChange(task.id, parseInt(e.target.value));
