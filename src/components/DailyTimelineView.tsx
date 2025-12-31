@@ -283,8 +283,8 @@ export default function DailyTimelineView({
     const durationHours = task.duration || 1;
     
     const startPercent = (adjustedHour / totalHours) * 100;
-    // Ensure minimum width of 1 hour (4.17% of 24 hours)
-    const minWidthPercent = (1 / totalHours) * 100; // 1 hour minimum
+    // Ensure minimum width: 1.5 hours for subtasks, 1 hour for regular tasks
+    const minWidthPercent = isSubtask(task) ? (1.5 / totalHours) * 100 : (1 / totalHours) * 100;
     const widthPercent = Math.max(minWidthPercent, (durationHours / totalHours) * 100);
 
     return {
@@ -367,6 +367,7 @@ export default function DailyTimelineView({
                     };
 
                     const clockColor = getClockStatus();
+                    const isOverdue = clockColor !== null;
 
                     // Checkbox shows for completed tasks or subtasks (which are always assumed completed)
                     const showCheckbox = task.progress === 100 || isSubtask(task);
@@ -377,13 +378,13 @@ export default function DailyTimelineView({
                         className={`flex items-center justify-center ${isSubtask(task) ? 'justify-center' : ''}`}
                         style={{ height: `${height}px` }}
                       >
-                        {/* Checkbox - only for completed tasks */}
+                        {/* Checkbox - for completed tasks or subtasks */}
                         {showCheckbox && onToggleComplete && (
                           <button
                             onClick={() => onToggleComplete(task.id)}
                             className="flex-shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center transition-all hover:bg-gray-100"
                             style={{
-                              borderColor: task.completed ? '#10b981' : '#d1d5db',
+                              borderColor: task.completed ? '#10b981' : (isSubtask(task) && isOverdue ? '#ef4444' : '#d1d5db'),
                               backgroundColor: task.completed ? '#10b981' : 'white',
                             }}
                           >
@@ -403,8 +404,8 @@ export default function DailyTimelineView({
                           </button>
                         )}
                         
-                        {/* Clock icon - for overdue tasks that are not completed */}
-                        {clockColor && (
+                        {/* Clock icon - for overdue tasks that are not completed (skip for subtasks) */}
+                        {clockColor && !isSubtask(task) && (
                           <Clock className={`w-4 h-4 opacity-60 ${clockColor === 'red' ? 'text-red-500' : 'text-yellow-500'}`} />
                         )}
                       </div>
