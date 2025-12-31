@@ -29,7 +29,7 @@ export default function WeeklyTimelineView({
   onDateChange,
   mobileView = 'checklist',
   autoProgressEnabled = false,
-  manuallyAdjustedTasks = new Set() // Temporarily disabled
+  manuallyAdjustedTasks = new Set()
 }: WeeklyTimelineViewProps) {
   const [menuOpenTaskId, setMenuOpenTaskId] = useState<string | null>(null);
   const [currentTimePosition, setCurrentTimePosition] = useState<number>(25); // Position as percentage (0-100)
@@ -248,18 +248,10 @@ export default function WeeklyTimelineView({
 
       // Find tasks that need progress updates
       weekTasks.forEach(task => {
-        console.log('Checking task:', task.id, 'progress:', task.progress, 'manually adjusted:', manuallyAdjustedTasks.has(task.id));
-
-        if (!task.startDate) {
-          console.log('Skipping task without start date');
-          return; // Skip tasks without start date
-        }
+        if (!task.startDate) return; // Skip tasks without start date
 
         // Skip manually adjusted tasks
-        // if (manuallyAdjustedTasks.has(task.id)) {
-        //   console.log('Skipping manually adjusted task:', task.id, 'total manually adjusted:', manuallyAdjustedTasks.size);
-        //   return;
-        // }
+        if (manuallyAdjustedTasks.has(task.id)) return;
 
         const taskStart = new Date(task.startDate);
         const taskEnd = new Date(taskStart.getTime() + task.duration * 60 * 60 * 1000);
@@ -271,38 +263,20 @@ export default function WeeklyTimelineView({
         const taskStartPercent = ((taskStart.getTime() - weekStart.getTime()) / (weekEnd.getTime() - weekStart.getTime())) * 100;
         const taskEndPercent = ((taskEnd.getTime() - weekStart.getTime()) / (weekEnd.getTime() - weekStart.getTime())) * 100;
 
-        console.log('Task position calc:', {
-          taskId: task.id,
-          taskStartPercent,
-          taskEndPercent,
-          currentTimePosition,
-          taskStart: taskStart.toISOString(),
-          taskEnd: taskEnd.toISOString()
-        });
-
         let expectedProgress = 0;
 
         if (currentTimePosition >= taskEndPercent) {
           // Timeline is at or past task end - task should be complete
           expectedProgress = 100;
-          console.log('Timeline at/past task end, setting progress to 100 for task:', task.id);
         } else if (currentTimePosition >= taskStartPercent) {
           // Timeline is within task - calculate proportional progress
           const taskProgress = ((currentTimePosition - taskStartPercent) / (taskEndPercent - taskStartPercent)) * 100;
           expectedProgress = Math.round(Math.max(0, Math.min(100, taskProgress)));
-          console.log('Timeline within task, calculated progress:', expectedProgress, 'for task:', task.id);
-        } else {
-          // Timeline is before task - task hasn't started
-          expectedProgress = 0;
-          console.log('Timeline before task, keeping progress at 0 for task:', task.id);
         }
 
         // Only update if different (avoid constant updates)
         if (task.progress !== expectedProgress) {
-          console.log('Updating progress from', task.progress, 'to', expectedProgress);
           onProgressChange(task.id, expectedProgress);
-        } else {
-          console.log('Progress already correct:', task.progress);
         }
       });
     } else {

@@ -18,7 +18,7 @@ function App() {
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [mobileView, setMobileView] = useState<'checklist' | 'calendar'>('checklist'); // For mobile only
   const [autoProgressEnabled, setAutoProgressEnabled] = useState(false);
-  // const [manuallyAdjustedTasks, setManuallyAdjustedTasks] = useState<Set<string>>(new Set());
+  const [manuallyAdjustedTasks, setManuallyAdjustedTasks] = useState<Set<string>>(new Set());
 
   // Load tasks on mount
   useEffect(() => {
@@ -61,7 +61,7 @@ function App() {
       task.id === id ? { ...task, progress } : task
     ));
     // Mark as manually adjusted
-    // setManuallyAdjustedTasks(prev => new Set(prev).add(id));
+    setManuallyAdjustedTasks(prev => new Set(prev).add(id));
   };
 
   const handleDurationChange = (id: string, duration: number) => {
@@ -86,6 +86,8 @@ function App() {
     setTasks(tasks.map(task =>
       task.id === id ? { ...task, completed: !task.completed } : task
     ));
+    // Mark as manually adjusted
+    setManuallyAdjustedTasks(prev => new Set(prev).add(id));
   };
 
   const handleDeleteTask = (id: string) => {
@@ -139,7 +141,7 @@ function App() {
             dayStartHour={4}
             mobileView={mobileView}
             autoProgressEnabled={autoProgressEnabled}
-            manuallyAdjustedTasks={new Set()} // Temporarily disabled
+            manuallyAdjustedTasks={manuallyAdjustedTasks}
           />
         );
       case 'weekly':
@@ -155,7 +157,7 @@ function App() {
             onDateChange={setCurrentDate}
             mobileView={mobileView}
             autoProgressEnabled={autoProgressEnabled}
-            manuallyAdjustedTasks={new Set()} // Temporarily disabled
+            manuallyAdjustedTasks={manuallyAdjustedTasks}
           />
         );
       case 'monthly':
@@ -171,7 +173,7 @@ function App() {
             onDateChange={setCurrentDate}
             mobileView={mobileView}
             autoProgressEnabled={autoProgressEnabled}
-            manuallyAdjustedTasks={new Set()} // Temporarily disabled
+            manuallyAdjustedTasks={manuallyAdjustedTasks}
           />
         );
       default:
