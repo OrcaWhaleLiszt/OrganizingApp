@@ -16,6 +16,7 @@ interface DailyTimelineViewProps {
   dayStartHour?: number; // Hour when day starts (default 4am = 4)
   mobileView?: 'checklist' | 'calendar'; // For mobile-only tab switching
   autoProgressEnabled?: boolean;
+  manuallyAdjustedTasks?: Set<string>;
 }
 
 export default function DailyTimelineView({
@@ -29,7 +30,8 @@ export default function DailyTimelineView({
   onDateChange,
   dayStartHour = 4,
   mobileView = 'checklist',
-  autoProgressEnabled = false
+  autoProgressEnabled = false,
+  manuallyAdjustedTasks = new Set()
 }: DailyTimelineViewProps) {
   const [menuOpenTaskId, setMenuOpenTaskId] = useState<string | null>(null);
   const [currentTimePosition, setCurrentTimePosition] = useState<number>(25); // Position as percentage (0-100)
@@ -188,9 +190,9 @@ export default function DailyTimelineView({
   // Auto-progress logic
   useEffect(() => {
     if (autoProgressEnabled && !isDraggingTimeLine) {
-      // Find tasks that the timeline is currently over
+      // Find tasks that need progress updates
       todayTasks.forEach(task => {
-        if (task.progress === 100 || !task.startDate) return; // Skip completed tasks and tasks without start date
+        if (!task.startDate) return; // Skip tasks without start date
 
         const taskStart = new Date(task.startDate);
         const taskEnd = new Date(taskStart.getTime() + task.duration * 60 * 60 * 1000);
@@ -203,20 +205,30 @@ export default function DailyTimelineView({
         const taskStartPercent = ((taskStart.getTime() - dayStart.getTime()) / (dayEnd.getTime() - dayStart.getTime())) * 100;
         const taskEndPercent = ((taskEnd.getTime() - dayStart.getTime()) / (dayEnd.getTime() - dayStart.getTime())) * 100;
 
-        // If timeline is within this task
-        if (currentTimePosition >= taskStartPercent && currentTimePosition <= taskEndPercent) {
-          // Calculate expected progress based on timeline position
-          const taskProgress = ((currentTimePosition - taskStartPercent) / (taskEndPercent - taskStartPercent)) * 100;
-          const expectedProgress = Math.round(Math.max(0, Math.min(100, taskProgress)));
+        // Skip manually adjusted tasks
+        if (manuallyAdjustedTasks.has(task.id)) return;
 
-          // Only update if significantly different (avoid constant updates)
-          if (Math.abs(task.progress - expectedProgress) > 2) {
-            onProgressChange(task.id, expectedProgress);
-          }
+        let expectedProgress = 0;
+
+        if (currentTimePosition < taskStartPercent) {
+          // Timeline is before task - task hasn't started
+          expectedProgress = 0;
+        } else if (currentTimePosition >= taskEndPercent) {
+          // Timeline is past task end - task should be complete
+          expectedProgress = 100;
+        } else {
+          // Timeline is within task - calculate proportional progress
+          const taskProgress = ((currentTimePosition - taskStartPercent) / (taskEndPercent - taskStartPercent)) * 100;
+          expectedProgress = Math.round(Math.max(0, Math.min(100, taskProgress)));
+        }
+
+        // Only update if different (avoid constant updates)
+        if (task.progress !== expectedProgress) {
+          onProgressChange(task.id, expectedProgress);
         }
       });
     }
-  }, [currentTimePosition, autoProgressEnabled, todayTasks, currentDate, dayStartHour, onProgressChange, isDraggingTimeLine]);
+  }, [currentTimePosition, autoProgressEnabled, todayTasks, currentDate, dayStartHour, onProgressChange, isDraggingTimeLine, manuallyAdjustedTasks]);
 
   // Format date for header
   const formatDailyHeader = () => {
