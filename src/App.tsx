@@ -189,7 +189,10 @@ function App() {
         onViewChange={setViewMode}
         onLoadMockData={handleLoadMockData}
         autoProgressEnabled={autoProgressEnabled}
-        onToggleAutoProgress={() => setAutoProgressEnabled(!autoProgressEnabled)}
+        onToggleAutoProgress={() => {
+          console.log('App: Toggling auto-progress from', autoProgressEnabled, 'to', !autoProgressEnabled);
+          setAutoProgressEnabled(!autoProgressEnabled);
+        }}
       />
       
       <div className="flex-1 flex flex-col max-w-7xl mx-auto px-4 pt-4 w-full overflow-hidden">

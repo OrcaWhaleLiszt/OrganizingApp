@@ -217,7 +217,7 @@ export default function MonthlyTimelineView({
 
   // Auto-progress logic
   useEffect(() => {
-    if (autoProgressEnabled && !isDraggingTimeLine) {
+    if (autoProgressEnabled) {
       // Find tasks that need progress updates
       monthTasks.forEach(task => {
         if (!task.startDate) return; // Skip tasks without start date
@@ -255,7 +255,7 @@ export default function MonthlyTimelineView({
         }
       });
     }
-  }, [currentTimePosition, autoProgressEnabled, monthTasks, year, month, onProgressChange, isDraggingTimeLine, manuallyAdjustedTasks]);
+  }, [currentTimePosition, autoProgressEnabled, monthTasks, year, month, onProgressChange, manuallyAdjustedTasks]);
 
   // Calculate positions for each task
   const getTaskPosition = (task: Task) => {

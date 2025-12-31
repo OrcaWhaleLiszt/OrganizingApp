@@ -241,10 +241,25 @@ export default function WeeklyTimelineView({
 
   // Auto-progress logic
   useEffect(() => {
-    if (autoProgressEnabled && !isDraggingTimeLine) {
+    console.log('Auto-progress effect running:', { autoProgressEnabled, currentTimePosition });
+
+    if (autoProgressEnabled) {
+      console.log('Auto-progress is enabled and not dragging');
+
       // Find tasks that need progress updates
       weekTasks.forEach(task => {
-        if (!task.startDate) return; // Skip tasks without start date
+        console.log('Checking task:', task.id, 'progress:', task.progress, 'manually adjusted:', manuallyAdjustedTasks.has(task.id));
+
+        if (!task.startDate) {
+          console.log('Skipping task without start date');
+          return; // Skip tasks without start date
+        }
+
+        // Skip manually adjusted tasks
+        if (manuallyAdjustedTasks.has(task.id)) {
+          console.log('Skipping manually adjusted task:', task.id, 'total manually adjusted:', manuallyAdjustedTasks.size);
+          return;
+        }
 
         const taskStart = new Date(task.startDate);
         const taskEnd = new Date(taskStart.getTime() + task.duration * 60 * 60 * 1000);
@@ -256,30 +271,44 @@ export default function WeeklyTimelineView({
         const taskStartPercent = ((taskStart.getTime() - weekStart.getTime()) / (weekEnd.getTime() - weekStart.getTime())) * 100;
         const taskEndPercent = ((taskEnd.getTime() - weekStart.getTime()) / (weekEnd.getTime() - weekStart.getTime())) * 100;
 
-        // Skip manually adjusted tasks
-        if (manuallyAdjustedTasks.has(task.id)) return;
+        console.log('Task position calc:', {
+          taskId: task.id,
+          taskStartPercent,
+          taskEndPercent,
+          currentTimePosition,
+          taskStart: taskStart.toISOString(),
+          taskEnd: taskEnd.toISOString()
+        });
 
         let expectedProgress = 0;
 
         if (currentTimePosition < taskStartPercent) {
           // Timeline is before task - task hasn't started
           expectedProgress = 0;
+          console.log('Timeline before task, setting progress to 0');
         } else if (currentTimePosition >= taskEndPercent) {
           // Timeline is past task end - task should be complete
           expectedProgress = 100;
+          console.log('Timeline past task, setting progress to 100');
         } else {
           // Timeline is within task - calculate proportional progress
           const taskProgress = ((currentTimePosition - taskStartPercent) / (taskEndPercent - taskStartPercent)) * 100;
           expectedProgress = Math.round(Math.max(0, Math.min(100, taskProgress)));
+          console.log('Timeline within task, calculated progress:', expectedProgress);
         }
 
         // Only update if different (avoid constant updates)
         if (task.progress !== expectedProgress) {
+          console.log('Updating progress from', task.progress, 'to', expectedProgress);
           onProgressChange(task.id, expectedProgress);
+        } else {
+          console.log('Progress already correct:', task.progress);
         }
       });
+    } else {
+      console.log('Auto-progress not running:', { autoProgressEnabled });
     }
-  }, [currentTimePosition, autoProgressEnabled, weekTasks, monday, onProgressChange, isDraggingTimeLine, manuallyAdjustedTasks]);
+  }, [currentTimePosition, autoProgressEnabled, weekTasks, monday, onProgressChange, manuallyAdjustedTasks]);
 
   // Calculate positions for each task
   const getTaskPosition = (task: Task) => {

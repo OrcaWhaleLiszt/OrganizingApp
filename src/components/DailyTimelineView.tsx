@@ -189,7 +189,7 @@ export default function DailyTimelineView({
 
   // Auto-progress logic
   useEffect(() => {
-    if (autoProgressEnabled && !isDraggingTimeLine) {
+    if (autoProgressEnabled) {
       // Find tasks that need progress updates
       todayTasks.forEach(task => {
         if (!task.startDate) return; // Skip tasks without start date
@@ -228,7 +228,7 @@ export default function DailyTimelineView({
         }
       });
     }
-  }, [currentTimePosition, autoProgressEnabled, todayTasks, currentDate, dayStartHour, onProgressChange, isDraggingTimeLine, manuallyAdjustedTasks]);
+  }, [currentTimePosition, autoProgressEnabled, todayTasks, currentDate, dayStartHour, onProgressChange, manuallyAdjustedTasks]);
 
   // Format date for header
   const formatDailyHeader = () => {

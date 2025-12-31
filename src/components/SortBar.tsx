@@ -137,7 +137,10 @@ export default function SortBar({
       <div className="flex items-center gap-2">
         {onToggleAutoProgress && (
           <button
-            onClick={onToggleAutoProgress}
+            onClick={() => {
+              console.log('Toggling auto-progress, current state:', autoProgressEnabled);
+              onToggleAutoProgress();
+            }}
             className={`px-3 py-1 rounded text-xs transition-colors ${
               autoProgressEnabled
                 ? 'bg-blue-600 hover:bg-blue-700 text-white'
