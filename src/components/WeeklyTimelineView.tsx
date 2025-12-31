@@ -16,6 +16,7 @@ interface WeeklyTimelineViewProps {
   mobileView?: 'checklist' | 'calendar'; // For mobile-only tab switching
   autoProgressEnabled?: boolean;
   manuallyAdjustedTasks?: Set<string>;
+  onManualAdjust?: (id: string) => void;
 }
 
 export default function WeeklyTimelineView({
@@ -29,7 +30,8 @@ export default function WeeklyTimelineView({
   onDateChange,
   mobileView = 'checklist',
   autoProgressEnabled = false,
-  manuallyAdjustedTasks = new Set()
+  manuallyAdjustedTasks = new Set(),
+  onManualAdjust
 }: WeeklyTimelineViewProps) {
   const [menuOpenTaskId, setMenuOpenTaskId] = useState<string | null>(null);
   const [currentTimePosition, setCurrentTimePosition] = useState<number>(25); // Position as percentage (0-100)
@@ -250,8 +252,8 @@ export default function WeeklyTimelineView({
       weekTasks.forEach(task => {
         if (!task.startDate) return; // Skip tasks without start date
 
-        // Skip manually adjusted tasks - temporarily disabled
-        // if (manuallyAdjustedTasks.has(task.id)) return;
+        // Skip manually adjusted tasks
+        if (manuallyAdjustedTasks.has(task.id)) return;
 
         const taskStart = new Date(task.startDate);
         const taskEnd = new Date(taskStart.getTime() + task.duration * 60 * 60 * 1000);
@@ -469,6 +471,8 @@ export default function WeeklyTimelineView({
                             max="100"
                             value={task.progress}
                             onChange={(e) => onProgressChange(task.id, parseInt(e.target.value))}
+                            onMouseDown={() => onManualAdjust?.(task.id)}
+                            onTouchStart={() => onManualAdjust?.(task.id)}
                             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                           />
 
