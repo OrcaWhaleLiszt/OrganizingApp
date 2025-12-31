@@ -232,8 +232,8 @@ export default function MonthlyTimelineView({
         const taskStartPercent = ((taskStart.getTime() - monthStart.getTime()) / totalMonthTime) * 100;
         const taskEndPercent = ((taskEnd.getTime() - monthStart.getTime()) / totalMonthTime) * 100;
 
-        // Skip manually adjusted tasks
-        if (manuallyAdjustedTasks.has(task.id)) return;
+        // Skip manually adjusted tasks - temporarily disabled
+        // if (manuallyAdjustedTasks.has(task.id)) return;
 
         let expectedProgress = 0;
 

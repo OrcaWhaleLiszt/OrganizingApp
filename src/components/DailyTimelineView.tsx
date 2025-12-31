@@ -205,8 +205,8 @@ export default function DailyTimelineView({
         const taskStartPercent = ((taskStart.getTime() - dayStart.getTime()) / (dayEnd.getTime() - dayStart.getTime())) * 100;
         const taskEndPercent = ((taskEnd.getTime() - dayStart.getTime()) / (dayEnd.getTime() - dayStart.getTime())) * 100;
 
-        // Skip manually adjusted tasks
-        if (manuallyAdjustedTasks.has(task.id)) return;
+        // Skip manually adjusted tasks - temporarily disabled
+        // if (manuallyAdjustedTasks.has(task.id)) return;
 
         let expectedProgress = 0;
 

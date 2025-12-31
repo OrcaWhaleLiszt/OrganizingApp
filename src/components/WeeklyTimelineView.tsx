@@ -250,8 +250,8 @@ export default function WeeklyTimelineView({
       weekTasks.forEach(task => {
         if (!task.startDate) return; // Skip tasks without start date
 
-        // Skip manually adjusted tasks
-        if (manuallyAdjustedTasks.has(task.id)) return;
+        // Skip manually adjusted tasks - temporarily disabled
+        // if (manuallyAdjustedTasks.has(task.id)) return;
 
         const taskStart = new Date(task.startDate);
         const taskEnd = new Date(taskStart.getTime() + task.duration * 60 * 60 * 1000);
