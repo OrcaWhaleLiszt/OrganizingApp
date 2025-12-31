@@ -220,15 +220,6 @@ export default function MonthlyTimelineView({
            (task.originalViewMode === 'weekly' || task.originalViewMode === 'monthly');
   });
 
-  // Determine if task should be shown as "filled in" (quick task style)
-  const shouldShowAsFilled = (task: Task) => {
-    if (task.originalViewMode === 'weekly') {
-      return task.duration <= 7; // Weekly tasks ≤ 7 days show as filled
-    } else if (task.originalViewMode === 'monthly') {
-      return task.duration <= 1; // Monthly tasks ≤ 1 day show as filled
-    }
-    return false;
-  };
 
   // Auto-progress logic
   useEffect(() => {
@@ -446,7 +437,7 @@ export default function MonthlyTimelineView({
                           <div
                             className="absolute inset-0 transition-all duration-300"
                             style={{
-                              width: `${shouldShowAsFilled(task) ? 100 : task.progress}%`,
+                              width: `${task.progress}%`,
                               backgroundColor: colors.fill,
                               borderRadius: '16px'
                             }}
