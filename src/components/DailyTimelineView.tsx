@@ -283,8 +283,10 @@ export default function DailyTimelineView({
     const durationHours = task.duration || 1;
     
     const startPercent = (adjustedHour / totalHours) * 100;
-    const widthPercent = (durationHours / totalHours) * 100;
-    
+    // Ensure minimum width of 1 hour (4.17% of 24 hours)
+    const minWidthPercent = (1 / totalHours) * 100; // 1 hour minimum
+    const widthPercent = Math.max(minWidthPercent, (durationHours / totalHours) * 100);
+
     return {
       start: Math.max(0, Math.min(100, startPercent)),
       width: Math.max(2, Math.min(100, widthPercent)),
@@ -442,24 +444,26 @@ export default function DailyTimelineView({
                           {/* Progress background overlay */}
                           <div
                             className="absolute inset-0 transition-all duration-300"
-                            style={{ 
-                              width: `${task.progress}%`,
+                            style={{
+                              width: `${isSubtask(task) ? 100 : task.progress}%`,
                               backgroundColor: colors.fill,
                               borderRadius: '16px'
                             }}
                           />
                           
                           {/* Invisible progress slider overlay */}
-                          <input
-                            type="range"
-                            min="0"
-                            max="100"
-                            value={task.progress}
-                            onChange={(e) => onProgressChange(task.id, parseInt(e.target.value))}
-                            onMouseDown={() => onManualAdjust?.(task.id)}
-                            onTouchStart={() => onManualAdjust?.(task.id)}
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                          />
+                          {!isSubtask(task) && (
+                            <input
+                              type="range"
+                              min="0"
+                              max="100"
+                              value={task.progress}
+                              onChange={(e) => onProgressChange(task.id, parseInt(e.target.value))}
+                              onMouseDown={() => onManualAdjust?.(task.id)}
+                              onTouchStart={() => onManualAdjust?.(task.id)}
+                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                            />
+                          )}
 
                           {/* Content on top of progress */}
                           <div className="relative z-20 flex items-center gap-2 w-full pointer-events-none">
@@ -557,7 +561,7 @@ export default function DailyTimelineView({
               className={`flex-1 overflow-auto scrollbar-thin
                 ${mobileView === 'checklist' ? 'hidden md:block' : ''}`}
             >
-              <div ref={timelineContainerRef} className="relative" style={{ minWidth: '1000px', minHeight: '500px', paddingRight: '8px' }}>
+              <div ref={timelineContainerRef} className="relative" style={{ minWidth: '1200px', minHeight: '500px', paddingRight: '8px' }}>
                 {/* Current time line indicator */}
                 <div
                   className="absolute top-0 bottom-0 w-1 bg-red-500 cursor-ew-resize hover:w-1.5 transition-all"

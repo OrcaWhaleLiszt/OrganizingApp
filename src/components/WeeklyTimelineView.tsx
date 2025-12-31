@@ -308,7 +308,7 @@ export default function WeeklyTimelineView({
     
     return {
       start: Math.max(0, Math.min(100, startPercent + hourOffsetPercent)),
-      width: Math.max(1, Math.min(dayWidthPercent, widthPercent)),
+      width: Math.max(3, Math.min(dayWidthPercent, widthPercent)), // Minimum 3% width for visibility
     };
   };
 
@@ -571,7 +571,7 @@ export default function WeeklyTimelineView({
               className={`flex-1 overflow-auto scrollbar-thin
                 ${mobileView === 'checklist' ? 'hidden md:block' : ''}`}
             >
-              <div ref={timelineContainerRef} className="relative" style={{ minWidth: '1000px', minHeight: '500px', paddingRight: '8px' }}>
+              <div ref={timelineContainerRef} className="relative" style={{ minWidth: '1200px', minHeight: '500px', paddingRight: '8px' }}>
                 {/* Current time line indicator */}
                 <div
                   className="absolute top-0 bottom-0 w-1 bg-red-500 cursor-ew-resize hover:w-1.5 transition-all"

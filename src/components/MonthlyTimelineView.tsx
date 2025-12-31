@@ -276,7 +276,7 @@ export default function MonthlyTimelineView({
     
     return {
       start: Math.max(0, Math.min(100, startPercent)),
-      width: Math.max(1, Math.min(100, widthPercent)),
+      width: Math.max(2, Math.min(100, widthPercent)), // Minimum 2% width for visibility
     };
   };
 
