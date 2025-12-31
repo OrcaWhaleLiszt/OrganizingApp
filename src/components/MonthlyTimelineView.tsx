@@ -210,16 +210,29 @@ export default function MonthlyTimelineView({
   const daysInMonth = lastDay.getDate();
   const totalDays = daysInMonth;
 
-  // Filter tasks within current month - only weekly/monthly tasks
+  // Filter tasks within current month - weekly tasks (>7d) and monthly tasks, exclude weekly subtasks
   const monthTasks = tasks.filter(task => {
     if (!task.startDate) return false;
     const taskDate = new Date(task.startDate);
-    // Only show tasks that were originally created in weekly or monthly view
-    return taskDate.getMonth() === month &&
-           taskDate.getFullYear() === year &&
-           (task.originalViewMode === 'weekly' || task.originalViewMode === 'monthly');
+
+    // Must be within this month
+    if (!(taskDate.getMonth() === month && taskDate.getFullYear() === year)) return false;
+
+    // Include monthly tasks
+    if (task.originalViewMode === 'monthly') return true;
+
+    // For weekly tasks: include if >7 days, exclude if ≤7 days (subtasks)
+    if (task.originalViewMode === 'weekly') {
+      return task.duration > 7; // >7 days (subtasks are ≤7 days)
+    }
+
+    return false;
   });
 
+  // Check if task is a subtask in monthly view (weekly tasks ≤7 days)
+  const isSubtask = (task: Task) => {
+    return task.originalViewMode === 'weekly' && task.duration <= 7;
+  };
 
   // Auto-progress logic
   useEffect(() => {
@@ -333,7 +346,9 @@ export default function MonthlyTimelineView({
                     // Calculate same dynamic height to match task cards
                     const maxHeight = 60;
                     const minHeight = 32;
-                    const height = Math.max(minHeight, Math.min(maxHeight, 400 / monthTasks.length));
+                    // Calculate height: subtasks are 50% height of regular tasks
+                    const baseHeight = Math.max(minHeight, Math.min(maxHeight, 400 / monthTasks.length));
+                    const height = isSubtask(task) ? Math.max(minHeight * 0.5, baseHeight * 0.5) : baseHeight;
                     
                     // Determine clock icon status based on timeline position
                     const getClockStatus = () => {
@@ -361,9 +376,10 @@ export default function MonthlyTimelineView({
                     };
 
                     const clockColor = getClockStatus();
+                    const isOverdue = clockColor !== null;
 
                     // Checkbox only shows when task is completed
-                    const showCheckbox = task.progress === 100;
+                    const showCheckbox = task.progress === 100 || isSubtask(task);
                     
                     return (
                       <div 
@@ -377,7 +393,7 @@ export default function MonthlyTimelineView({
                             onClick={() => onToggleComplete(task.id)}
                             className="flex-shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center transition-all hover:bg-gray-100"
                             style={{
-                              borderColor: task.completed ? '#10b981' : '#d1d5db',
+                              borderColor: task.completed ? '#10b981' : (isSubtask(task) && isOverdue ? '#ef4444' : '#d1d5db'),
                               backgroundColor: task.completed ? '#10b981' : 'white',
                             }}
                           >
@@ -397,8 +413,8 @@ export default function MonthlyTimelineView({
                           </button>
                         )}
                         
-                        {/* Clock icon - for overdue tasks that are not completed */}
-                        {clockColor && (
+                        {/* Clock icon - for overdue tasks that are not completed (skip for subtasks) */}
+                        {clockColor && !isSubtask(task) && (
                           <Clock className={`w-4 h-4 opacity-60 ${clockColor === 'red' ? 'text-red-500' : 'text-yellow-500'}`} />
                         )}
                       </div>
@@ -414,7 +430,9 @@ export default function MonthlyTimelineView({
                     // Calculate dynamic height based on totalTasks
                     const maxHeight = 60;
                     const minHeight = 32;
-                    const height = Math.max(minHeight, Math.min(maxHeight, 400 / monthTasks.length));
+                    // Calculate height: subtasks are 50% height of regular tasks
+                    const baseHeight = Math.max(minHeight, Math.min(maxHeight, 400 / monthTasks.length));
+                    const height = isSubtask(task) ? Math.max(minHeight * 0.5, baseHeight * 0.5) : baseHeight;
                     
                     // Get importance color (same as timeline bars)
                     const colors = getImportanceColor(task.importance);
@@ -437,23 +455,25 @@ export default function MonthlyTimelineView({
                           <div
                             className="absolute inset-0 transition-all duration-300"
                             style={{
-                              width: `${task.progress}%`,
+                              width: `${isSubtask(task) ? 100 : task.progress}%`,
                               backgroundColor: colors.fill,
                               borderRadius: '16px'
                             }}
                           />
                           
                           {/* Invisible progress slider overlay */}
-                          <input
-                            type="range"
-                            min="0"
-                            max="100"
-                            value={task.progress}
-                            onChange={(e) => onProgressChange(task.id, parseInt(e.target.value))}
-                            onMouseDown={() => onManualAdjust?.(task.id)}
-                            onTouchStart={() => onManualAdjust?.(task.id)}
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                          />
+                          {!isSubtask(task) && (
+                            <input
+                              type="range"
+                              min="0"
+                              max="100"
+                              value={task.progress}
+                              onChange={(e) => onProgressChange(task.id, parseInt(e.target.value))}
+                              onMouseDown={() => onManualAdjust?.(task.id)}
+                              onTouchStart={() => onManualAdjust?.(task.id)}
+                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                            />
+                          )}
 
                           {/* Content on top of progress */}
                           <div className="relative z-20 flex items-center gap-2 w-full pointer-events-none">
@@ -521,7 +541,9 @@ export default function MonthlyTimelineView({
                     // Calculate same dynamic height to match task cards
                     const maxHeight = 60;
                     const minHeight = 32;
-                    const height = Math.max(minHeight, Math.min(maxHeight, 400 / monthTasks.length));
+                    // Calculate height: subtasks are 50% height of regular tasks
+                    const baseHeight = Math.max(minHeight, Math.min(maxHeight, 400 / monthTasks.length));
+                    const height = isSubtask(task) ? Math.max(minHeight * 0.5, baseHeight * 0.5) : baseHeight;
                     
                     const status = getTaskStatus(task);
                     

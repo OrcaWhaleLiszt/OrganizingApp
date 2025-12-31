@@ -229,7 +229,7 @@ export default function WeeklyTimelineView({
     onDateChange(newDate);
   };
 
-  // Filter tasks within this week - include both daily and weekly tasks
+  // Filter tasks within this week - include daily tasks (>4h) and weekly tasks, exclude daily subtasks
   const weekTasks = tasks.filter(task => {
     if (!task.startDate) return false;
     const taskDate = new Date(task.startDate);
@@ -238,9 +238,24 @@ export default function WeeklyTimelineView({
     const sunday = new Date(monday);
     sunday.setDate(monday.getDate() + 6);
 
-    return taskDate >= monday && taskDate <= sunday;
+    // Must be within this week
+    if (!(taskDate >= monday && taskDate <= sunday)) return false;
+
+    // Include weekly tasks
+    if (task.originalViewMode === 'weekly') return true;
+
+    // For daily tasks: include if >4 hours, exclude if ≤30 minutes (subtasks)
+    if (task.originalViewMode === 'daily') {
+      return task.duration > 0.5 && task.duration <= 4; // >30min and ≤4 hours
+    }
+
+    return false;
   });
 
+  // Check if task is a subtask in weekly view (daily tasks ≤4 hours)
+  const isSubtask = (task: Task) => {
+    return task.originalViewMode === 'daily' && task.duration <= 4;
+  };
 
   // Auto-progress logic
   useEffect(() => {
@@ -355,7 +370,9 @@ export default function WeeklyTimelineView({
                     // Calculate same dynamic height to match task cards
                     const maxHeight = 60;
                     const minHeight = 32;
-                    const height = Math.max(minHeight, Math.min(maxHeight, 400 / weekTasks.length));
+                    // Calculate height: subtasks are 50% height of regular tasks
+                    const baseHeight = Math.max(minHeight, Math.min(maxHeight, 400 / weekTasks.length));
+                    const height = isSubtask(task) ? Math.max(minHeight * 0.5, baseHeight * 0.5) : baseHeight;
                     
                     // Determine clock icon status based on timeline position
                     const getClockStatus = () => {
@@ -383,9 +400,10 @@ export default function WeeklyTimelineView({
                     };
 
                     const clockColor = getClockStatus();
+                    const isOverdue = clockColor !== null;
 
                     // Checkbox only shows when task is completed
-                    const showCheckbox = task.progress === 100;
+                    const showCheckbox = task.progress === 100 || isSubtask(task);
                     
                     return (
                       <div 
@@ -399,7 +417,7 @@ export default function WeeklyTimelineView({
                             onClick={() => onToggleComplete(task.id)}
                             className="flex-shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center transition-all hover:bg-gray-100"
                             style={{
-                              borderColor: task.completed ? '#10b981' : '#d1d5db',
+                              borderColor: task.completed ? '#10b981' : (isSubtask(task) && isOverdue ? '#ef4444' : '#d1d5db'),
                               backgroundColor: task.completed ? '#10b981' : 'white',
                             }}
                           >
@@ -419,8 +437,8 @@ export default function WeeklyTimelineView({
                           </button>
                         )}
                         
-                        {/* Clock icon - for overdue tasks that are not completed */}
-                        {clockColor && (
+                        {/* Clock icon - for overdue tasks that are not completed (skip for subtasks) */}
+                        {clockColor && !isSubtask(task) && (
                           <Clock className={`w-4 h-4 opacity-60 ${clockColor === 'red' ? 'text-red-500' : 'text-yellow-500'}`} />
                         )}
                       </div>
@@ -436,7 +454,9 @@ export default function WeeklyTimelineView({
                     // Calculate dynamic height based on totalTasks
                     const maxHeight = 60;
                     const minHeight = 32;
-                    const height = Math.max(minHeight, Math.min(maxHeight, 400 / weekTasks.length));
+                    // Calculate height: subtasks are 50% height of regular tasks
+                    const baseHeight = Math.max(minHeight, Math.min(maxHeight, 400 / weekTasks.length));
+                    const height = isSubtask(task) ? Math.max(minHeight * 0.5, baseHeight * 0.5) : baseHeight;
                     
                     // Get importance color (same as timeline bars)
                     const colors = getImportanceColor(task.importance);
@@ -459,23 +479,25 @@ export default function WeeklyTimelineView({
                           <div
                             className="absolute inset-0 transition-all duration-300"
                             style={{
-                              width: `${task.progress}%`,
+                              width: `${isSubtask(task) ? 100 : task.progress}%`,
                               backgroundColor: colors.fill,
                               borderRadius: '16px'
                             }}
                           />
                           
                           {/* Invisible progress slider overlay */}
-                          <input
-                            type="range"
-                            min="0"
-                            max="100"
-                            value={task.progress}
-                            onChange={(e) => onProgressChange(task.id, parseInt(e.target.value))}
-                            onMouseDown={() => onManualAdjust?.(task.id)}
-                            onTouchStart={() => onManualAdjust?.(task.id)}
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                          />
+                          {!isSubtask(task) && (
+                            <input
+                              type="range"
+                              min="0"
+                              max="100"
+                              value={task.progress}
+                              onChange={(e) => onProgressChange(task.id, parseInt(e.target.value))}
+                              onMouseDown={() => onManualAdjust?.(task.id)}
+                              onTouchStart={() => onManualAdjust?.(task.id)}
+                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                            />
+                          )}
 
                           {/* Content on top of progress */}
                           <div className="relative z-20 flex items-center gap-2 w-full pointer-events-none">
@@ -543,7 +565,9 @@ export default function WeeklyTimelineView({
                     // Calculate same dynamic height to match task cards
                     const maxHeight = 60;
                     const minHeight = 32;
-                    const height = Math.max(minHeight, Math.min(maxHeight, 400 / weekTasks.length));
+                    // Calculate height: subtasks are 50% height of regular tasks
+                    const baseHeight = Math.max(minHeight, Math.min(maxHeight, 400 / weekTasks.length));
+                    const height = isSubtask(task) ? Math.max(minHeight * 0.5, baseHeight * 0.5) : baseHeight;
                     
                     const status = getTaskStatus(task);
                     
