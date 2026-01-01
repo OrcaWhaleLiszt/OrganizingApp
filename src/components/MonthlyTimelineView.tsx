@@ -17,6 +17,8 @@ interface MonthlyTimelineViewProps {
   autoProgressEnabled?: boolean;
   manuallyAdjustedTasks?: Set<string>;
   onManualAdjust?: (id: string) => void;
+  currentTimePosition?: number; // Synced timeline position (0-100)
+  onTimePositionChange?: (percentage: number) => void; // Callback for timeline position changes
 }
 
 export default function MonthlyTimelineView({
@@ -31,10 +33,11 @@ export default function MonthlyTimelineView({
   mobileView = 'checklist',
   autoProgressEnabled = false,
   manuallyAdjustedTasks = new Set(),
-  onManualAdjust
+  onManualAdjust,
+  currentTimePosition = 25,
+  onTimePositionChange
 }: MonthlyTimelineViewProps) {
   const [menuOpenTaskId, setMenuOpenTaskId] = useState<string | null>(null);
-  const [currentTimePosition, setCurrentTimePosition] = useState<number>(25); // Position as percentage (0-100)
   const [isDraggingTimeLine, setIsDraggingTimeLine] = useState(false);
   const leftScrollRef = useRef<HTMLDivElement>(null);
   const rightScrollRef = useRef<HTMLDivElement>(null);
@@ -185,7 +188,7 @@ export default function MonthlyTimelineView({
     const rect = timelineContainerRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const percentage = Math.max(0, Math.min(100, (x / rect.width) * 100));
-    setCurrentTimePosition(percentage);
+    onTimePositionChange?.(percentage);
   };
 
   const handleTimeLineMouseUp = () => {

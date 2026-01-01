@@ -15,6 +15,7 @@ function App() {
   const [sortBy, setSortBy] = useState<SortBy>(null);
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
+  const [currentTimeOffset, setCurrentTimeOffset] = useState<number>(12); // Hours from start of current period (default to noon)
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [mobileView, setMobileView] = useState<'checklist' | 'calendar'>('checklist'); // For mobile only
   const [autoProgressEnabled, setAutoProgressEnabled] = useState(false);
@@ -65,6 +66,45 @@ function App() {
 
   const handleManualAdjust = (id: string) => {
     setManuallyAdjustedTasks(prev => new Set(prev).add(id));
+  };
+
+  // Calculate current time position percentage for each view
+  const getCurrentTimePosition = (viewMode: ViewMode): number => {
+    if (viewMode === 'daily') {
+      // For daily: 24 hours, offset in hours
+      return Math.min(100, Math.max(0, (currentTimeOffset / 24) * 100));
+    } else if (viewMode === 'weekly') {
+      // For weekly: 7 days = 168 hours, offset in hours
+      return Math.min(100, Math.max(0, (currentTimeOffset / 168) * 100));
+    } else if (viewMode === 'monthly') {
+      // For monthly: days in month * 24 hours
+      const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
+      const totalHours = daysInMonth * 24;
+      return Math.min(100, Math.max(0, (currentTimeOffset / totalHours) * 100));
+    }
+    return 25; // Default fallback
+  };
+
+  // Handle timeline position changes from any view
+  const handleTimePositionChange = (percentage: number, viewMode: ViewMode) => {
+    let newOffset: number;
+
+    if (viewMode === 'daily') {
+      // Convert percentage to hours (0-23.99)
+      newOffset = (percentage / 100) * 24;
+    } else if (viewMode === 'weekly') {
+      // Convert percentage to hours (0-167.99)
+      newOffset = (percentage / 100) * 168;
+    } else if (viewMode === 'monthly') {
+      // Convert percentage to hours for the month
+      const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
+      const totalHours = daysInMonth * 24;
+      newOffset = (percentage / 100) * totalHours;
+    } else {
+      newOffset = currentTimeOffset;
+    }
+
+    setCurrentTimeOffset(Math.max(0, newOffset));
   };
 
   const handleDurationChange = (id: string, duration: number) => {
@@ -146,6 +186,8 @@ function App() {
             autoProgressEnabled={autoProgressEnabled}
             manuallyAdjustedTasks={manuallyAdjustedTasks}
             onManualAdjust={handleManualAdjust}
+            currentTimePosition={getCurrentTimePosition('daily')}
+            onTimePositionChange={(percentage) => handleTimePositionChange(percentage, 'daily')}
           />
         );
       case 'weekly':
@@ -163,6 +205,8 @@ function App() {
             autoProgressEnabled={autoProgressEnabled}
             manuallyAdjustedTasks={manuallyAdjustedTasks}
             onManualAdjust={handleManualAdjust}
+            currentTimePosition={getCurrentTimePosition('weekly')}
+            onTimePositionChange={(percentage) => handleTimePositionChange(percentage, 'weekly')}
           />
         );
       case 'monthly':
@@ -180,6 +224,8 @@ function App() {
             autoProgressEnabled={autoProgressEnabled}
             manuallyAdjustedTasks={manuallyAdjustedTasks}
             onManualAdjust={handleManualAdjust}
+            currentTimePosition={getCurrentTimePosition('monthly')}
+            onTimePositionChange={(percentage) => handleTimePositionChange(percentage, 'monthly')}
           />
         );
       default:
