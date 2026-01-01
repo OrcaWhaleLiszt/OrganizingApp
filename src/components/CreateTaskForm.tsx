@@ -24,8 +24,25 @@ export default function CreateTaskForm({ onSubmit, viewMode, currentDate }: Crea
 
   // Get max duration based on view mode
   const getMaxDuration = () => {
-    if (viewMode === 'daily' || viewMode === 'weekly') return 24; // hours
+    if (viewMode === 'daily') return 24; // hours
+    if (viewMode === 'weekly') return 168; // 7 days in hours
     return 30; // days for monthly
+  };
+
+  // Get minimum duration based on view mode
+  const getMinDuration = () => {
+    if (viewMode === 'weekly') return 4; // 4 hours minimum for weekly
+    if (viewMode === 'monthly') return 1; // 1 day minimum for monthly
+    return 0; // 0 hours minimum for daily
+  };
+
+  // Get step size based on view mode and current duration
+  const getStepSize = () => {
+    if (viewMode === 'monthly') return 1;
+    if (viewMode === 'weekly') {
+      return duration < 24 ? 4 : 1; // 4-hour steps initially, then 1-day steps
+    }
+    return 0.5; // 30-minute steps for daily
   };
 
   // Get max start value based on view mode
@@ -51,6 +68,10 @@ export default function CreateTaskForm({ onSubmit, viewMode, currentDate }: Crea
   const formatDuration = () => {
     if (viewMode === 'monthly') return `${duration} day${duration !== 1 ? 's' : ''}`;
     if (duration < 0.5) return 'Quick';
+    if (duration >= 24) {
+      const days = Math.round(duration / 24);
+      return `${days} day${days !== 1 ? 's' : ''}`;
+    }
     return `${duration}h`;
   };
 
@@ -61,7 +82,7 @@ export default function CreateTaskForm({ onSubmit, viewMode, currentDate }: Crea
       setDuration(2);
     } else if (viewMode === 'weekly') {
       setStartDay(1);
-      setDuration(4);
+      setDuration(4); // Minimum 4 hours for weekly
     } else if (viewMode === 'monthly') {
       setStartDay(1);
       setDuration(3);
@@ -113,11 +134,7 @@ export default function CreateTaskForm({ onSubmit, viewMode, currentDate }: Crea
 
   const handleDurationEdit = (value: string) => {
     const num = parseFloat(value) || 0;
-    if (viewMode === 'monthly') {
-      setDuration(Math.max(1, Math.min(getMaxDuration(), num)));
-    } else {
-      setDuration(Math.max(0, Math.min(getMaxDuration(), num)));
-    }
+    setDuration(Math.max(getMinDuration(), Math.min(getMaxDuration(), num)));
   };
 
   const handleStartEdit = (value: string) => {
@@ -189,9 +206,9 @@ export default function CreateTaskForm({ onSubmit, viewMode, currentDate }: Crea
             <label className="text-sm text-white w-24">Duration</label>
             <input
               type="range"
-              min={viewMode === 'monthly' ? '1' : '0'}
+              min={getMinDuration()}
               max={getMaxDuration()}
-              step={viewMode === 'monthly' ? '1' : '0.5'}
+              step={getStepSize()}
               value={duration}
               onChange={(e) => setDuration(parseFloat(e.target.value))}
               className="flex-1 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-dark"
@@ -205,7 +222,7 @@ export default function CreateTaskForm({ onSubmit, viewMode, currentDate }: Crea
                 onBlur={() => setEditingDuration(false)}
                 onKeyDown={(e) => e.key === 'Enter' && setEditingDuration(false)}
                 className="w-16 px-2 py-1 text-sm bg-gray-800 border border-blue-500 text-white rounded text-center"
-                step={viewMode === 'monthly' ? '1' : '0.5'}
+                step={getStepSize()}
                 autoFocus
               />
             ) : (
