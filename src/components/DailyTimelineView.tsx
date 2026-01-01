@@ -629,7 +629,6 @@ export default function DailyTimelineView({
                         onToggleComplete={onToggleComplete}
                         totalTasks={todayTasks.length}
                         isActive={isTaskActive(task)}
-                        isSubtask={isSubtask(task)}
                       />
                     );
                   })}
