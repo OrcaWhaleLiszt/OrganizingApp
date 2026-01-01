@@ -13,6 +13,7 @@ interface TimelineBarProps {
   totalTasks?: number; // Total number of tasks for dynamic sizing
   isActive?: boolean; // Whether red line is over this task
   forceFilled?: boolean; // Force the bar to appear filled (like a subtask)
+  isSubtask?: boolean; // Whether this bar should be displayed as a subtask in the current view
 }
 
 export default function TimelineBar({
@@ -24,20 +25,10 @@ export default function TimelineBar({
   onStartTimeChange,
   totalTasks = 1,
   isActive = false,
-  forceFilled = false
+  forceFilled = false,
+  isSubtask = false
 }: TimelineBarProps) {
   const isQuickTask = task.duration < 0.5;
-  // Determine if this task should be displayed as a subtask based on its original view mode and duration
-  const isSubtask = (() => {
-    if (task.originalViewMode === 'daily') {
-      return task.duration <= 4; // Daily tasks ≤4h are subtasks when carried over
-    } else if (task.originalViewMode === 'weekly') {
-      return task.duration <= 1; // Weekly tasks ≤1 day are subtasks when carried over
-    } else if (task.originalViewMode === 'monthly') {
-      return task.duration <= 7; // Monthly tasks ≤7 days are subtasks when carried over
-    }
-    return task.duration <= 0.5; // Default: tasks ≤30 minutes are subtasks
-  })();
 
   // Check if task should be shown as filled (completely filled progress bar)
   const shouldBeFilled = forceFilled || isQuickTask;
