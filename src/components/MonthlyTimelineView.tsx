@@ -289,7 +289,7 @@ export default function MonthlyTimelineView({
     
     return {
       start: Math.max(0, Math.min(100, startPercent)),
-      width: Math.max(2, Math.min(100, widthPercent)), // Minimum 2% width for visibility
+      width: Math.max(1, Math.min(100, widthPercent)), // Minimum 1% width for visibility
     };
   };
 
@@ -626,18 +626,19 @@ export default function MonthlyTimelineView({
               {monthTasks.map(task => {
                 const { start, width } = getTaskPosition(task);
                 return (
-                  <TimelineBar
-                    key={task.id}
-                    task={task}
-                    startPosition={start}
-                    width={width}
-                    onProgressChange={onProgressChange}
-                    onDurationChange={onDurationChange}
-                    onStartTimeChange={onStartTimeChange}
-                    onToggleComplete={onToggleComplete}
-                    totalTasks={monthTasks.length}
-                        isActive={isTaskActive(task)}
-                  />
+                    <TimelineBar
+                      key={task.id}
+                      task={task}
+                      startPosition={start}
+                      width={width}
+                      onProgressChange={onProgressChange}
+                      onDurationChange={onDurationChange}
+                      onStartTimeChange={onStartTimeChange}
+                      onToggleComplete={onToggleComplete}
+                      totalTasks={monthTasks.length}
+                      isActive={isTaskActive(task)}
+                      forceFilled={isSubtask(task)}
+                    />
                 );
               })}
             </div>

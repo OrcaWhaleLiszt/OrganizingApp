@@ -230,7 +230,7 @@ export default function WeeklyTimelineView({
   };
 
   // Filter tasks within this week - include daily tasks (>4h) and weekly tasks, exclude daily subtasks
-  const weekTasks = tasks.filter(task => {
+  const weekTasksUnsorted = tasks.filter(task => {
     if (!task.startDate) return false;
     const taskDate = new Date(task.startDate);
     taskDate.setHours(0, 0, 0, 0);
@@ -250,6 +250,12 @@ export default function WeeklyTimelineView({
     }
 
     return false;
+  });
+
+  // Sort tasks by start time for consistent ordering between checklist and calendar
+  const weekTasks = weekTasksUnsorted.sort((a, b) => {
+    if (!a.startDate || !b.startDate) return 0;
+    return a.startDate.getTime() - b.startDate.getTime();
   });
 
   // Check if task is a subtask in weekly view (daily tasks ≤4 hours)
@@ -323,7 +329,7 @@ export default function WeeklyTimelineView({
     
     return {
       start: Math.max(0, Math.min(100, startPercent + hourOffsetPercent)),
-      width: Math.max(3, Math.min(dayWidthPercent, widthPercent)), // Minimum 3% width for visibility
+      width: Math.max(1, Math.min(dayWidthPercent, widthPercent)), // Minimum 1% width for visibility
     };
   };
 
@@ -660,6 +666,7 @@ export default function WeeklyTimelineView({
                         onToggleComplete={onToggleComplete}
                         totalTasks={weekTasks.length}
                         isActive={isTaskActive(task)}
+                        forceFilled={isSubtask(task)}
                       />
                     );
                   })}

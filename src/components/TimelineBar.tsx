@@ -12,6 +12,7 @@ interface TimelineBarProps {
   onToggleComplete?: (id: string) => void;
   totalTasks?: number; // Total number of tasks for dynamic sizing
   isActive?: boolean; // Whether red line is over this task
+  forceFilled?: boolean; // Force the bar to appear filled (like a subtask)
 }
 
 export default function TimelineBar({
@@ -22,14 +23,18 @@ export default function TimelineBar({
   onDurationChange,
   onStartTimeChange,
   totalTasks = 1,
-  isActive = false
+  isActive = false,
+  forceFilled = false
 }: TimelineBarProps) {
   const isQuickTask = task.duration < 0.5;
   const isSubtask = task.duration <= 0.5; // Subtasks are ≤30 minutes
 
-  // isFilledTask is now just isQuickTask (for filled display)
+  // Check if task should be shown as filled (completely filled progress bar)
+  const shouldBeFilled = forceFilled || isQuickTask;
 
-  
+  // For filled tasks, show 100% progress
+  const displayProgress = shouldBeFilled ? 100 : task.progress;
+
   // Get colors based on importance (1-10 scale)
   const colors = getImportanceColor(task.importance);
   const [isResizing, setIsResizing] = useState(false);
@@ -198,7 +203,7 @@ export default function TimelineBar({
             <div
               className="absolute inset-0 transition-all duration-300 pointer-events-none"
               style={{ 
-                width: `${task.progress}%`,
+                width: `${displayProgress}%`,
                 borderRadius: '12px',
                 backgroundColor: colors.progress,
                 zIndex: 0,
@@ -252,7 +257,7 @@ export default function TimelineBar({
               type="range"
               min="0"
               max="100"
-              value={task.progress}
+              value={displayProgress}
               onChange={handleProgressChange}
               className="absolute opacity-0 z-10"
               style={{ 
