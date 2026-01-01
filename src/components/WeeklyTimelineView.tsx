@@ -337,7 +337,7 @@ export default function WeeklyTimelineView({
 
     return {
       start: Math.max(0, Math.min(100, startPercent + hourOffsetPercent)),
-      width: Math.max(minWidthPercent, Math.min(dayWidthPercent, widthPercent)), // Minimum 8-hour equivalent width
+      width: Math.max(minWidthPercent, Math.min(100, widthPercent)), // Minimum 8-hour equivalent width, max 100% (full week)
     };
   };
 
@@ -394,15 +394,10 @@ export default function WeeklyTimelineView({
 
                       const taskStart = new Date(task.startDate);
                       const taskEnd = new Date(taskStart.getTime() + task.duration * 60 * 60 * 1000);
+                      const now = new Date();
 
-                      // Calculate position in timeline
-                      const weekStart = new Date(monday);
-                      const weekEnd = new Date(monday);
-                      weekEnd.setDate(weekEnd.getDate() + 7);
-                      const taskEndPercent = ((taskEnd.getTime() - weekStart.getTime()) / (weekEnd.getTime() - weekStart.getTime())) * 100;
-
-                      if (currentTimePosition > taskEndPercent) {
-                        // Task is overdue based on timeline
+                      // Check if task is actually overdue based on current time
+                      if (now > taskEnd) {
                         if (task.progress === 0) {
                           return 'red'; // No progress, red clock
                         } else {
