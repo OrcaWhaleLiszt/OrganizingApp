@@ -29,7 +29,6 @@ export default function TimelineBar({
   isSubtask = false
 }: TimelineBarProps) {
   const isQuickTask = task.duration < 0.5;
-  const isSubtask = task.duration <= 0.5; // Subtasks are ≤30 minutes
 
   // Check if task should be shown as filled (completely filled progress bar)
   const shouldBeFilled = forceFilled || isQuickTask;
