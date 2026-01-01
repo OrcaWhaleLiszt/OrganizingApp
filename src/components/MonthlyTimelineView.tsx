@@ -44,6 +44,7 @@ export default function MonthlyTimelineView({
   const timelineContainerRef = useRef<HTMLDivElement>(null);
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
+  const monthStart = new Date(year, month, 1);
 
   // Format date for header
   const formatMonthlyHeader = () => {
@@ -643,6 +644,7 @@ export default function MonthlyTimelineView({
                       forceFilled={isSubtask(task)}
                       isSubtask={isSubtask(task)}
                       totalHours={24 * daysInMonth}
+                      mondayDate={monthStart}
                     />
                 );
               })}

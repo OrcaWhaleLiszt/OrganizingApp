@@ -15,6 +15,7 @@ interface TimelineBarProps {
   forceFilled?: boolean; // Force the bar to appear filled (like a subtask)
   isSubtask?: boolean; // Whether this bar should be displayed as a subtask in the current view
   totalHours?: number; // Total hours represented by the full width of the container
+  mondayDate?: Date; // Monday date for weekly view calculations
 }
 
 export default function TimelineBar({
@@ -28,7 +29,8 @@ export default function TimelineBar({
   isActive = false,
   forceFilled = false,
   isSubtask = false,
-  totalHours = 24
+  totalHours = 24,
+  mondayDate
 }: TimelineBarProps) {
   const isQuickTask = task.duration < 0.5;
 
@@ -125,12 +127,23 @@ export default function TimelineBar({
       const deltaX = e.clientX - dragStartX.current;
       const deltaPercent = (deltaX / containerWidth) * 100;
       const newPosition = Math.max(0, Math.min(100 - width, dragStartPosition.current + deltaPercent));
-      const newStartHour = (newPosition / 100) * totalHours;
-      const newStartDate = new Date(task.startDate);
-      const hours = Math.floor(newStartHour);
-      const minutes = Math.round((newStartHour - hours) * 60);
-      newStartDate.setHours(hours, minutes, 0, 0);
-      
+
+      let newStartDate: Date;
+
+      if (mondayDate && totalHours > 24) {
+        // Weekly/monthly view: calculate date from monday reference
+        const totalMinutes = (newPosition / 100) * totalHours * 60;
+        const newDate = new Date(mondayDate.getTime() + totalMinutes * 60 * 1000);
+        newStartDate = newDate;
+      } else {
+        // Daily view: calculate hour within the current day
+        const newStartHour = (newPosition / 100) * 24;
+        newStartDate = new Date(task.startDate);
+        const hours = Math.floor(newStartHour);
+        const minutes = Math.round((newStartHour - hours) * 60);
+        newStartDate.setHours(hours, minutes, 0, 0);
+      }
+
       onStartTimeChange(task.id, newStartDate);
     };
 

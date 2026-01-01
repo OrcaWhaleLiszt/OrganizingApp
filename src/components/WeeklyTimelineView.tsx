@@ -675,6 +675,7 @@ export default function WeeklyTimelineView({
                         forceFilled={isSubtask(task)}
                         isSubtask={isSubtask(task)}
                         totalHours={24 * 7}
+                        mondayDate={monday}
                       />
                     );
                   })}
