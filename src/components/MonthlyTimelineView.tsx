@@ -639,6 +639,7 @@ export default function MonthlyTimelineView({
                       isActive={isTaskActive(task)}
                       forceFilled={isSubtask(task)}
                       isSubtask={isSubtask(task)}
+                      totalHours={24 * daysInMonth}
                     />
                 );
               })}

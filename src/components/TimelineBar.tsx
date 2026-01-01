@@ -14,6 +14,7 @@ interface TimelineBarProps {
   isActive?: boolean; // Whether red line is over this task
   forceFilled?: boolean; // Force the bar to appear filled (like a subtask)
   isSubtask?: boolean; // Whether this bar should be displayed as a subtask in the current view
+  totalHours?: number; // Total hours represented by the full width of the container
 }
 
 export default function TimelineBar({
@@ -26,7 +27,8 @@ export default function TimelineBar({
   totalTasks = 1,
   isActive = false,
   forceFilled = false,
-  isSubtask = false
+  isSubtask = false,
+  totalHours = 24
 }: TimelineBarProps) {
   const isQuickTask = task.duration < 0.5;
 
@@ -93,7 +95,6 @@ export default function TimelineBar({
       const barStartX = (startPosition / 100) * containerWidth;
       const newBarWidth = mouseX - barStartX;
       const newWidthPercent = (newBarWidth / containerWidth) * 100;
-      const totalHours = 24;
       const newDuration = Math.max(0.5, (newWidthPercent / 100) * totalHours);
       
       onDurationChange(task.id, parseFloat(newDuration.toFixed(1)));

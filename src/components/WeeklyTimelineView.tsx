@@ -331,10 +331,13 @@ export default function WeeklyTimelineView({
     // Add hour offset within the day
     const hourOffsetPercent = (taskHour / 24) * dayWidthPercent;
     const widthPercent = durationAsDayFraction * dayWidthPercent;
-    
+
+    // Minimum width equivalent to 8 hours (8/24 = 1/3 of a day)
+    const minWidthPercent = (8 / 24) * dayWidthPercent;
+
     return {
       start: Math.max(0, Math.min(100, startPercent + hourOffsetPercent)),
-      width: Math.max(1, Math.min(dayWidthPercent, widthPercent)), // Minimum 1% width for visibility
+      width: Math.max(minWidthPercent, Math.min(dayWidthPercent, widthPercent)), // Minimum 8-hour equivalent width
     };
   };
 
@@ -673,6 +676,7 @@ export default function WeeklyTimelineView({
                         isActive={isTaskActive(task)}
                         forceFilled={isSubtask(task)}
                         isSubtask={isSubtask(task)}
+                        totalHours={24 * 7}
                       />
                     );
                   })}

@@ -630,6 +630,7 @@ export default function DailyTimelineView({
                         totalTasks={todayTasks.length}
                         isActive={isTaskActive(task)}
                         isSubtask={isSubtask(task)}
+                        totalHours={24}
                       />
                     );
                   })}
