@@ -125,7 +125,6 @@ export default function TimelineBar({
       const deltaX = e.clientX - dragStartX.current;
       const deltaPercent = (deltaX / containerWidth) * 100;
       const newPosition = Math.max(0, Math.min(100 - width, dragStartPosition.current + deltaPercent));
-      const totalHours = 24;
       const newStartHour = (newPosition / 100) * totalHours;
       const newStartDate = new Date(task.startDate);
       const hours = Math.floor(newStartHour);

@@ -322,15 +322,15 @@ export default function WeeklyTimelineView({
     taskDate.setHours(0, 0, 0, 0);
     
     const daysFromMonday = Math.floor((taskDate.getTime() - monday.getTime()) / (1000 * 60 * 60 * 24));
-    // Duration is in hours for weekly view, convert to day fraction
+    // Duration is in hours for weekly view, convert to days
     const durationHours = task.duration || 1;
-    const durationAsDayFraction = Math.min(1, durationHours / 24); // Cap at 1 day max
-    
+    const durationInDays = durationHours / 24; // Convert to days
+
     const dayWidthPercent = 100 / totalDays; // Width of one day
     const startPercent = (daysFromMonday / totalDays) * 100;
     // Add hour offset within the day
     const hourOffsetPercent = (taskHour / 24) * dayWidthPercent;
-    const widthPercent = durationAsDayFraction * dayWidthPercent;
+    const widthPercent = Math.min(durationInDays * dayWidthPercent, 100); // Allow full width, cap at 100%
 
     // Minimum width equivalent to 8 hours (8/24 = 1/3 of a day)
     const minWidthPercent = (8 / 24) * dayWidthPercent;
