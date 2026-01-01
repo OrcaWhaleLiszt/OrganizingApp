@@ -672,6 +672,7 @@ export default function WeeklyTimelineView({
                         totalTasks={weekTasks.length}
                         isActive={isTaskActive(task)}
                         forceFilled={isSubtask(task)}
+                        isSubtask={isSubtask(task)}
                       />
                     );
                   })}

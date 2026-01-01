@@ -13,6 +13,7 @@ interface TimelineBarProps {
   totalTasks?: number; // Total number of tasks for dynamic sizing
   isActive?: boolean; // Whether red line is over this task
   forceFilled?: boolean; // Force the bar to appear filled (like a subtask)
+  isSubtask?: boolean; // Whether this bar represents a subtask (affects height)
 }
 
 export default function TimelineBar({
@@ -24,7 +25,8 @@ export default function TimelineBar({
   onStartTimeChange,
   totalTasks = 1,
   isActive = false,
-  forceFilled = false
+  forceFilled = false,
+  isSubtask = false
 }: TimelineBarProps) {
   const isQuickTask = task.duration < 0.5;
   const isSubtask = task.duration <= 0.5; // Subtasks are ≤30 minutes
@@ -48,7 +50,8 @@ export default function TimelineBar({
   // Dynamic height: taller when few tasks, shorter when many
   const maxHeight = 60;
   const minHeight = 32;
-  const height = Math.max(minHeight, Math.min(maxHeight, 400 / totalTasks));
+  const baseHeight = Math.max(minHeight, Math.min(maxHeight, 400 / totalTasks));
+  const height = isSubtask ? Math.max(minHeight * 0.5, baseHeight * 0.5) : baseHeight;
 
   const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onProgressChange(task.id, parseInt(e.target.value));

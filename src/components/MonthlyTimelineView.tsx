@@ -638,6 +638,7 @@ export default function MonthlyTimelineView({
                       totalTasks={monthTasks.length}
                       isActive={isTaskActive(task)}
                       forceFilled={isSubtask(task)}
+                      isSubtask={isSubtask(task)}
                     />
                 );
               })}
