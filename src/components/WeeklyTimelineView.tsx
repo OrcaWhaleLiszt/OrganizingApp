@@ -258,9 +258,14 @@ export default function WeeklyTimelineView({
     return a.startDate.getTime() - b.startDate.getTime();
   });
 
-  // Check if task is a subtask in weekly view (daily tasks ≤4 hours)
+  // Check if task is a subtask in weekly view
   const isSubtask = (task: Task) => {
-    return task.originalViewMode === 'daily' && task.duration <= 4;
+    if (task.originalViewMode === 'daily') {
+      return task.duration <= 4; // Daily tasks ≤4h are subtasks
+    } else if (task.originalViewMode === 'weekly') {
+      return task.duration <= 1; // Weekly tasks ≤1 day are subtasks
+    }
+    return false;
   };
 
   // Auto-progress logic

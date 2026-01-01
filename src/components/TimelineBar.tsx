@@ -48,8 +48,7 @@ export default function TimelineBar({
   // Dynamic height: taller when few tasks, shorter when many
   const maxHeight = 60;
   const minHeight = 32;
-  const baseHeight = Math.max(minHeight, Math.min(maxHeight, 400 / totalTasks));
-  const height = isSubtask ? Math.max(minHeight * 0.5, baseHeight * 0.5) : baseHeight;
+  const height = Math.max(minHeight, Math.min(maxHeight, 400 / totalTasks));
 
   const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onProgressChange(task.id, parseInt(e.target.value));
@@ -162,7 +161,7 @@ export default function TimelineBar({
         className="relative h-full w-full"
       >
         {/* Background green container - extends full width */}
-        {!isQuickTask && (
+        {!shouldBeFilled && (
           <div
             className="absolute h-full pointer-events-none"
             style={{
@@ -185,8 +184,8 @@ export default function TimelineBar({
             width: `calc(${width}% - 12px)`, // White container ends 12px before right edge
             minWidth: '40px',
             cursor: isHoveringEdge ? 'ew-resize' : isHoveringHandle ? 'move' : 'default',
-            backgroundColor: isQuickTask ? colors.fill : 'white',
-            border: isQuickTask ? 'none' : `4px solid ${colors.border}`,
+            backgroundColor: shouldBeFilled ? colors.fill : 'white',
+            border: shouldBeFilled ? 'none' : `4px solid ${colors.border}`,
             borderRadius: '16px',
             boxSizing: 'border-box',
             overflow: 'hidden',
@@ -199,7 +198,7 @@ export default function TimelineBar({
           }}
         >
           {/* Progress fill background */}
-          {!isQuickTask && (
+          {!shouldBeFilled && (
             <div
               className="absolute inset-0 transition-all duration-300 pointer-events-none"
               style={{ 
@@ -224,16 +223,16 @@ export default function TimelineBar({
             >
               <div className="flex flex-col gap-[2px] pointer-events-none">
                 <div className="flex gap-[2px]">
-                  <div className="w-1 h-1 rounded-full" style={{ backgroundColor: isQuickTask ? 'white' : colors.dots }}></div>
-                  <div className="w-1 h-1 rounded-full" style={{ backgroundColor: isQuickTask ? 'white' : colors.dots }}></div>
+                  <div className="w-1 h-1 rounded-full" style={{ backgroundColor: shouldBeFilled ? 'white' : colors.dots }}></div>
+                  <div className="w-1 h-1 rounded-full" style={{ backgroundColor: shouldBeFilled ? 'white' : colors.dots }}></div>
                 </div>
                 <div className="flex gap-[2px]">
-                  <div className="w-1 h-1 rounded-full" style={{ backgroundColor: isQuickTask ? 'white' : colors.dots }}></div>
-                  <div className="w-1 h-1 rounded-full" style={{ backgroundColor: isQuickTask ? 'white' : colors.dots }}></div>
+                  <div className="w-1 h-1 rounded-full" style={{ backgroundColor: shouldBeFilled ? 'white' : colors.dots }}></div>
+                  <div className="w-1 h-1 rounded-full" style={{ backgroundColor: shouldBeFilled ? 'white' : colors.dots }}></div>
                 </div>
                 <div className="flex gap-[2px]">
-                  <div className="w-1 h-1 rounded-full" style={{ backgroundColor: isQuickTask ? 'white' : colors.dots }}></div>
-                  <div className="w-1 h-1 rounded-full" style={{ backgroundColor: isQuickTask ? 'white' : colors.dots }}></div>
+                  <div className="w-1 h-1 rounded-full" style={{ backgroundColor: shouldBeFilled ? 'white' : colors.dots }}></div>
+                  <div className="w-1 h-1 rounded-full" style={{ backgroundColor: shouldBeFilled ? 'white' : colors.dots }}></div>
                 </div>
               </div>
             </div>
@@ -245,14 +244,14 @@ export default function TimelineBar({
             style={{ 
               left: onStartTimeChange ? '28px' : '8px', 
               maxWidth: 'calc(100% - 36px)',
-              color: isQuickTask ? 'white' : '#374151'
+              color: shouldBeFilled ? 'white' : '#374151'
             }}
           >
             {task.title}
           </span>
           
           {/* Progress slider input */}
-          {!isQuickTask && (
+          {!shouldBeFilled && (
             <input
               type="range"
               min="0"
