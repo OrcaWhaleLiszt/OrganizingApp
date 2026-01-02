@@ -74,14 +74,32 @@ function App() {
       // For daily: currentTimeOffset is hours from midnight of current day
       return Math.min(100, Math.max(0, (currentTimeOffset / 24) * 100));
     } else if (viewMode === 'weekly') {
-      // For weekly: currentTimeOffset is hours from monday midnight
-      // Convert to percentage through the week (168 hours total)
-      return Math.min(100, Math.max(0, (currentTimeOffset / 168) * 100));
+      // For weekly: calculate position based on current date + currentTimeOffset
+      const monday = new Date(currentDate);
+      monday.setDate(currentDate.getDate() - (currentDate.getDay() === 0 ? 6 : currentDate.getDay() - 1));
+      monday.setHours(0, 0, 0, 0);
+
+      // Create a date representing the current timeline position
+      const timelineDate = new Date(currentDate);
+      timelineDate.setHours(currentTimeOffset, 0, 0, 0);
+
+      // Calculate position within the week
+      const weekStart = new Date(monday);
+      const weekEnd = new Date(monday);
+      weekEnd.setDate(weekEnd.getDate() + 7);
+
+      const weekProgress = (timelineDate.getTime() - weekStart.getTime()) / (weekEnd.getTime() - weekStart.getTime());
+      return Math.min(100, Math.max(0, weekProgress * 100));
     } else if (viewMode === 'monthly') {
-      // For monthly: currentTimeOffset is hours from 1st of month midnight
-      const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
-      const totalHours = daysInMonth * 24;
-      return Math.min(100, Math.max(0, (currentTimeOffset / totalHours) * 100));
+      // For monthly: calculate position within the month
+      const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+      const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
+
+      const timelineDate = new Date(currentDate);
+      timelineDate.setHours(currentTimeOffset, 0, 0, 0);
+
+      const monthProgress = (timelineDate.getTime() - monthStart.getTime()) / (monthEnd.getTime() - monthStart.getTime());
+      return Math.min(100, Math.max(0, monthProgress * 100));
     }
     return 25; // Default fallback
   };
@@ -94,18 +112,43 @@ function App() {
       // Convert percentage to hours from midnight of current day
       newOffset = (percentage / 100) * 24;
     } else if (viewMode === 'weekly') {
-      // Convert percentage to hours from monday midnight (0-167.99)
-      newOffset = (percentage / 100) * 168;
+      // Convert percentage position to actual time within the week
+      const monday = new Date(currentDate);
+      monday.setDate(currentDate.getDate() - (currentDate.getDay() === 0 ? 6 : currentDate.getDay() - 1));
+      monday.setHours(0, 0, 0, 0);
+
+      const weekDurationMs = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+      const positionMs = (percentage / 100) * weekDurationMs;
+      const targetTime = new Date(monday.getTime() + positionMs);
+
+      // Calculate which day and hour this corresponds to relative to current date
+      const daysDiff = Math.floor((targetTime.getTime() - currentDate.getTime()) / (24 * 60 * 60 * 1000));
+      const targetDate = new Date(currentDate);
+      targetDate.setDate(currentDate.getDate() + daysDiff);
+      targetDate.setHours(targetTime.getHours(), 0, 0, 0);
+
+      // Calculate offset from current date midnight
+      const currentMidnight = new Date(currentDate);
+      currentMidnight.setHours(0, 0, 0, 0);
+      newOffset = (targetDate.getTime() - currentMidnight.getTime()) / (60 * 60 * 1000);
     } else if (viewMode === 'monthly') {
-      // Convert percentage to hours from 1st of month midnight
-      const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
-      const totalHours = daysInMonth * 24;
-      newOffset = (percentage / 100) * totalHours;
+      // Convert percentage to hours from current date
+      const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+      const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
+
+      const monthDurationMs = monthEnd.getTime() - monthStart.getTime();
+      const positionMs = (percentage / 100) * monthDurationMs;
+      const targetTime = new Date(monthStart.getTime() + positionMs);
+
+      // Calculate offset from current date midnight
+      const currentMidnight = new Date(currentDate);
+      currentMidnight.setHours(0, 0, 0, 0);
+      newOffset = (targetTime.getTime() - currentMidnight.getTime()) / (60 * 60 * 1000);
     } else {
       newOffset = currentTimeOffset;
     }
 
-    setCurrentTimeOffset(newOffset);
+    setCurrentTimeOffset(Math.max(0, newOffset));
   };
 
   const handleDurationChange = (id: string, duration: number) => {

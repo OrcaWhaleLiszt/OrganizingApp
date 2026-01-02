@@ -300,19 +300,14 @@ export default function DailyTimelineView({
     <div className="w-full h-full flex flex-col">
       {/* Content area with integrated headers */}
       <div className="flex-1 flex overflow-hidden border-t-2 border-gray-300">
-        {todayTasks.length === 0 ? (
-          <div className="flex-1 flex items-center justify-center text-gray-500 text-sm">
-            No tasks scheduled for today
-          </div>
-        ) : (
-          <>
-            {/* Left panel - Task list (scrollable) */}
-            <div 
-              ref={leftScrollRef}
-              onScroll={handleLeftScroll}
-              className={`flex-shrink-0 border-r-2 border-gray-300 overflow-y-auto relative bg-white w-full md:w-1/2
-                ${mobileView === 'calendar' ? 'hidden md:block' : ''}`}
-            >
+        <>
+          {/* Left panel - Task list (scrollable) */}
+          <div
+            ref={leftScrollRef}
+            onScroll={handleLeftScroll}
+            className={`flex-shrink-0 border-r-2 border-gray-300 overflow-y-auto relative bg-white w-full md:w-1/2
+              ${mobileView === 'calendar' ? 'hidden md:block' : ''}`}
+          >
               {/* Tasks label - sticky at top with navigation arrows */}
               <div className="sticky top-0 h-10 bg-gray-50 border-b border-gray-200 flex items-center justify-center gap-3 px-4 font-semibold text-sm text-gray-800 z-20">
                 <button
@@ -333,8 +328,14 @@ export default function DailyTimelineView({
               </div>
               {/* Three-column layout: Checkbox (40px) | Tasks (~65%) | Status (~25%) */}
               <div className="flex" style={{ paddingTop: '60px' }}>
-                {/* Checkbox column (minimal width) */}
-                <div className="flex flex-col gap-2 px-1" style={{ width: '40px', flexShrink: 0 }}>
+                {todayTasks.length === 0 ? (
+                  <div className="flex-1 flex items-center justify-center text-gray-500 text-sm py-8">
+                    No tasks scheduled for today
+                  </div>
+                ) : (
+                  <>
+                    {/* Checkbox column (minimal width) */}
+                    <div className="flex flex-col gap-2 px-1" style={{ width: '40px', flexShrink: 0 }}>
                   {todayTasks.map(task => {
                     // Calculate same dynamic height to match task cards
                     const maxHeight = 60;
@@ -636,12 +637,13 @@ export default function DailyTimelineView({
                         totalHours={24}
                       />
                     );
-                  })}
-                </div>
-              </div>
+                    })}
+                  </div>
+                </>
+              )}
             </div>
           </>
-        )}
+        )
       </div>
     </div>
   );
