@@ -311,39 +311,89 @@ export default function MonthlyTimelineView({
     <div className="w-full h-full flex flex-col">
       {/* Content area with integrated headers */}
       <div className="flex-1 flex overflow-hidden border-t-2 border-gray-300">
-        <>
-          {/* Left panel - Task list (scrollable) */}
-          <div
-            ref={leftScrollRef}
-            onScroll={handleLeftScroll}
-            className={`flex-shrink-0 border-r-2 border-gray-300 overflow-y-auto relative bg-white w-full md:w-1/2
-              ${mobileView === 'calendar' ? 'hidden md:block' : ''}`}
-          >
-              {/* Tasks label - sticky at top with navigation arrows */}
-              <div className="sticky top-0 h-10 bg-gray-50 border-b border-gray-200 flex items-center justify-center gap-3 px-4 font-semibold text-sm text-gray-800 z-20">
-                <button
-                  onClick={handlePrevious}
-                  className="px-2 py-1 hover:bg-gray-200 rounded transition-colors text-lg text-gray-700 hover:text-black"
-                  title="Previous month"
+        {monthTasks.length === 0 ? (
+          <>
+            {/* Left panel - Task list (scrollable) */}
+            <div
+              ref={leftScrollRef}
+              onScroll={handleLeftScroll}
+              className={`flex-shrink-0 border-r-2 border-gray-300 overflow-y-auto relative bg-white w-full md:w-1/2
+                ${mobileView === 'calendar' ? 'hidden md:block' : ''}`}
+            >
+                {/* Tasks label - sticky at top with navigation arrows */}
+                <div className="sticky top-0 h-10 bg-gray-50 border-b border-gray-200 flex items-center justify-center gap-3 px-4 font-semibold text-sm text-gray-800 z-20">
+                  <button
+                    onClick={handlePrevious}
+                    className="px-2 py-1 hover:bg-gray-200 rounded transition-colors text-lg text-gray-700 hover:text-black"
+                    title="Previous month"
+                  >
+                    ‹
+                  </button>
+                  <span>{formatMonthlyHeader()}</span>
+                  <button
+                    onClick={handleNext}
+                    className="px-2 py-1 hover:bg-gray-200 rounded transition-colors text-lg text-gray-700 hover:text-black"
+                    title="Next month"
+                  >
+                    ›
+                  </button>
+                </div>
+                <div className="flex items-center justify-center text-gray-500 text-sm py-8" style={{ paddingTop: '60px' }}>
+                  No tasks scheduled for this month
+                </div>
+            </div>
+            {/* Right panel - Timeline (scrollable) */}
+            <div
+              ref={rightScrollRef}
+              onScroll={handleRightScroll}
+              className={`flex-1 overflow-auto scrollbar-thin
+                ${mobileView === 'checklist' ? 'hidden md:block' : ''}`}
+            >
+              <div ref={timelineContainerRef} className="relative" style={{ minWidth: '1200px', minHeight: '500px', paddingRight: '8px' }}>
+                {/* Current time line indicator */}
+                <div
+                  className="absolute top-0 bottom-0 w-1 bg-red-500 cursor-ew-resize hover:w-1.5 transition-all"
+                  style={{
+                    left: `${currentTimePosition}%`,
+                    zIndex: 100
+                  }}
+                  onMouseDown={handleTimeLineMouseDown}
                 >
-                  ‹
-                </button>
-                <span>{formatMonthlyHeader()}</span>
-                <button
-                  onClick={handleNext}
-                  className="px-2 py-1 hover:bg-gray-200 rounded transition-colors text-lg text-gray-700 hover:text-black"
-                  title="Next month"
-                >
-                  ›
-                </button>
+                  {/* Draggable handle at top */}
+                  <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-red-500 rounded-full cursor-grab active:cursor-grabbing" />
+                </div>
               </div>
-              {/* Three-column layout: Checkbox (40px) | Tasks (~65%) | Status (~25%) */}
-              <div className="flex" style={{ paddingTop: '60px' }}>
-                {monthTasks.length === 0 ? (
-                  <div className="flex-1 flex items-center justify-center text-gray-500 text-sm py-8">
-                    No tasks scheduled for this month
-                  </div>
-                ) : (
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Left panel - Task list (scrollable) */}
+            <div
+              ref={leftScrollRef}
+              onScroll={handleLeftScroll}
+              className={`flex-shrink-0 border-r-2 border-gray-300 overflow-y-auto relative bg-white w-full md:w-1/2
+                ${mobileView === 'calendar' ? 'hidden md:block' : ''}`}
+            >
+                {/* Tasks label - sticky at top with navigation arrows */}
+                <div className="sticky top-0 h-10 bg-gray-50 border-b border-gray-200 flex items-center justify-center gap-3 px-4 font-semibold text-sm text-gray-800 z-20">
+                  <button
+                    onClick={handlePrevious}
+                    className="px-2 py-1 hover:bg-gray-200 rounded transition-colors text-lg text-gray-700 hover:text-black"
+                    title="Previous month"
+                  >
+                    ‹
+                  </button>
+                  <span>{formatMonthlyHeader()}</span>
+                  <button
+                    onClick={handleNext}
+                    className="px-2 py-1 hover:bg-gray-200 rounded transition-colors text-lg text-gray-700 hover:text-black"
+                    title="Next month"
+                  >
+                    ›
+                  </button>
+                </div>
+                {/* Three-column layout: Checkbox (40px) | Tasks (~65%) | Status (~25%) */}
+                <div className="flex" style={{ paddingTop: '60px' }}>
                   <>
                     {/* Checkbox column (minimal width) */}
                     <div className="flex flex-col gap-2 px-1" style={{ width: '40px', flexShrink: 0 }}>
@@ -609,26 +659,26 @@ export default function MonthlyTimelineView({
           })}
       </div>
 
-        {/* Background grid */}
+                {/* Background grid */}
                 <div className="absolute inset-0 flex" style={{ top: '40px' }}>
-          {Array.from({ length: Math.ceil(daysInMonth / 3) }, (_, i) => (
-            <div
-              key={i}
-              className="flex-1 border-r border-gray-200"
-              style={{ height: '100%' }}
-            />
-          ))}
-        </div>
+                  {Array.from({ length: Math.ceil(daysInMonth / 3) }, (_, i) => (
+                    <div
+                      key={i}
+                      className="flex-1 border-r border-gray-200"
+                      style={{ height: '100%' }}
+                    />
+                  ))}
+                </div>
 
                 {/* Task bars */}
-                <div 
+                <div
                   className="flex flex-col gap-2"
-              style={{ 
+                  style={{
                     paddingTop: '60px',
                     paddingLeft: '8px',
                     paddingRight: '0px'
-              }}
-            >
+                  }}
+                >
               {monthTasks.map(task => {
                 const { start, width } = getTaskPosition(task);
                 return (
