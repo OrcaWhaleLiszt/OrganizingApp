@@ -643,21 +643,21 @@ export default function MonthlyTimelineView({
 
                 {/* Day labels - now part of scrollable content */}
                 <div className="flex h-10 sticky top-0 bg-gray-50 z-10">
-          {dayLabels.map((day, index) => {
-            const nextDay = dayLabels[index + 1] || daysInMonth + 1;
-            const width = ((nextDay - day) / totalDays) * 100;
-            
-            return (
-              <div
-                key={day}
+                  {dayLabels.map((day, index) => {
+                    const nextDay = dayLabels[index + 1] || daysInMonth + 1;
+                    const width = ((nextDay - day) / totalDays) * 100;
+
+                    return (
+                      <div
+                        key={day}
                         className="text-center text-xs text-gray-500 flex items-center justify-center font-medium"
-                style={{ width: `${width}%` }}
-              >
+                        style={{ width: `${width}%` }}
+                      >
                         Day {day}
-              </div>
-            );
-          })}
-      </div>
+                      </div>
+                    );
+                  })}
+                </div>
 
                 {/* Background grid */}
                 <div className="absolute inset-0 flex" style={{ top: '40px' }}>
@@ -679,28 +679,28 @@ export default function MonthlyTimelineView({
                     paddingRight: '0px'
                   }}
                 >
-              {monthTasks.map(task => {
-                const { start, width } = getTaskPosition(task);
-                return (
-                    <TimelineBar
-                      key={task.id}
-                      task={task}
-                      startPosition={start}
-                      width={width}
-                      onProgressChange={onProgressChange}
-                      onDurationChange={onDurationChange}
-                      onStartTimeChange={onStartTimeChange}
-                      onToggleComplete={onToggleComplete}
-                      totalTasks={monthTasks.length}
-                      isActive={isTaskActive(task)}
-                      forceFilled={isSubtask(task)}
-                      isSubtask={isSubtask(task)}
-                      totalHours={24 * daysInMonth}
-                      mondayDate={monthStart}
-                    />
-                );
-                    })}
-                  </div>
+                  {monthTasks.map(task => {
+                    const { start, width } = getTaskPosition(task);
+                    return (
+                      <TimelineBar
+                        key={task.id}
+                        task={task}
+                        startPosition={start}
+                        width={width}
+                        onProgressChange={onProgressChange}
+                        onDurationChange={onDurationChange}
+                        onStartTimeChange={onStartTimeChange}
+                        onToggleComplete={onToggleComplete}
+                        totalTasks={monthTasks.length}
+                        isActive={isTaskActive(task)}
+                        forceFilled={isSubtask(task)}
+                        isSubtask={isSubtask(task)}
+                        totalHours={24 * daysInMonth}
+                        mondayDate={monthStart}
+                      />
+                    );
+                  })}
+                </div>
                 </>
               )}
             </div>
