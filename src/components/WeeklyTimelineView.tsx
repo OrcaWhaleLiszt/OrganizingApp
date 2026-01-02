@@ -624,6 +624,8 @@ export default function WeeklyTimelineView({
                     );
                   })}
                 </div>
+                  </>
+                )}
               </div>
             </div>
 
