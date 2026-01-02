@@ -564,9 +564,10 @@ export default function MonthlyTimelineView({
                         </span>
                       </div>
                     );
-                  })}
-                </div>
-              </div>
+                    })}
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Right panel - Timeline (scrollable) */}
