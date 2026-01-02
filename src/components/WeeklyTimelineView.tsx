@@ -395,16 +395,42 @@ export default function WeeklyTimelineView({
                     const getClockStatus = () => {
                       if (!task.startDate || task.progress === 100) return null;
 
-                      const taskStart = new Date(task.startDate);
-                      const taskEnd = new Date(taskStart.getTime() + task.duration * 60 * 60 * 1000);
-                      const now = new Date();
+                      // For subtasks (carried over from daily), use timeline position
+                      if (isSubtask(task)) {
+                        const taskStart = new Date(task.startDate);
+                        const taskEnd = new Date(taskStart.getTime() + task.duration * 60 * 60 * 1000);
 
-                      // Check if task is actually overdue based on current time
-                      if (now > taskEnd) {
-                        if (task.progress === 0) {
-                          return 'red'; // No progress, red clock
-                        } else {
-                          return 'yellow'; // Some progress, yellow clock
+                        // Calculate position in timeline
+                        const taskDate = new Date(task.startDate);
+                        const taskHour = taskDate.getHours();
+                        taskDate.setHours(0, 0, 0, 0);
+
+                        const daysFromMonday = Math.floor((taskDate.getTime() - monday.getTime()) / (1000 * 60 * 60 * 24));
+                        const dayWidthPercent = 100 / totalDays;
+                        const startPercent = (daysFromMonday / totalDays) * 100;
+                        const hourOffsetPercent = (taskHour / 24) * dayWidthPercent;
+                        const taskStartPercent = startPercent + hourOffsetPercent;
+                        const taskEndPercent = taskStartPercent + (task.duration / 24) * dayWidthPercent;
+
+                        if (currentTimePosition > taskEndPercent) {
+                          if (task.progress === 0) {
+                            return 'red'; // No progress, red clock
+                          } else {
+                            return 'yellow'; // Some progress, yellow clock
+                          }
+                        }
+                      } else {
+                        // For regular weekly tasks, use real time
+                        const taskStart = new Date(task.startDate);
+                        const taskEnd = new Date(taskStart.getTime() + task.duration * 60 * 60 * 1000);
+                        const now = new Date();
+
+                        if (now > taskEnd) {
+                          if (task.progress === 0) {
+                            return 'red'; // No progress, red clock
+                          } else {
+                            return 'yellow'; // Some progress, yellow clock
+                          }
                         }
                       }
 
