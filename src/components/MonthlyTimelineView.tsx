@@ -701,12 +701,10 @@ export default function MonthlyTimelineView({
                     );
                   })}
                 </div>
-                </>
-              )}
+              </div>
             </div>
           </>
         )
-      </div>
     </div>
   );
 }
