@@ -95,39 +95,48 @@ body {
   height: 100vh;
 }
 
-/* Custom scrollbar styling - Large bubble style for mobile */
+/* Custom scrollbar styling - EXTRA LARGE for mobile */
+.scrollbar-thin {
+  scrollbar-width: auto;
+  scrollbar-color: #3b82f6 #cbd5e1;
+}
+
 .scrollbar-thin::-webkit-scrollbar {
-  height: 24px; /* Larger for horizontal scrollbars */
-  width: 20px;  /* Large for vertical scrollbars */
+  height: 40px; /* EXTRA LARGE for horizontal scrollbars */
+  width: 40px;  /* EXTRA LARGE for vertical scrollbars */
+  background: #cbd5e1;
 }
 
 .scrollbar-thin::-webkit-scrollbar-track {
-  background: #e2e8f0;
-  border-radius: 12px;
-  margin: 4px;
+  background: #cbd5e1;
+  border-radius: 0;
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb {
   background: #3b82f6;
-  border-radius: 12px;
-  border: 3px solid #e2e8f0;
-  min-height: 50px;
-  min-width: 50px;
+  border-radius: 20px;
+  border: 6px solid #cbd5e1;
+  min-height: 80px;
+  min-width: 80px;
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
   background: #2563eb;
-  border: 2px solid #e2e8f0;
+  border: 5px solid #cbd5e1;
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb:active {
   background: #1d4ed8;
+  border: 4px solid #cbd5e1;
 }
 
-/* Firefox scrollbar styling */
-.scrollbar-thin {
-  scrollbar-width: auto;
-  scrollbar-color: #3b82f6 #e2e8f0;
+/* Always show scrollbars */
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  visibility: visible !important;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  visibility: visible !important;
 }
 
 /* Hide scrollbar for specific elements */

@@ -530,7 +530,11 @@ export default function WeeklyTimelineView({
               onScroll={handleLeftScroll}
               className={`flex-shrink-0 border-r-2 border-gray-300 overflow-y-auto scrollbar-thin relative bg-white w-full md:w-1/2
                 ${mobileView === 'calendar' ? 'hidden md:block' : ''}`}
-              style={{ touchAction: 'pan-y' }}
+              style={{ 
+                touchAction: 'none',
+                overscrollBehavior: 'contain',
+                WebkitOverflowScrolling: 'auto'
+              }}
             >
               {/* Tasks label - sticky at top with navigation arrows */}
               <div className="sticky top-0 h-10 bg-gray-50 border-b border-gray-200 flex items-center justify-center gap-3 px-4 font-semibold text-sm text-gray-800 z-20">
@@ -745,7 +749,18 @@ export default function WeeklyTimelineView({
               onScroll={handleRightScroll}
               className={`flex-1 overflow-auto scrollbar-thin
                 ${mobileView === 'checklist' ? 'hidden md:block' : ''}`}
-              style={{ touchAction: 'pan-x pan-y', overscrollBehavior: 'contain' }}
+              style={{ 
+                touchAction: 'none',
+                overscrollBehavior: 'contain',
+                WebkitOverflowScrolling: 'auto'
+              }}
+              onTouchStart={(e) => {
+                // Only allow touch on scrollbars, not content
+                const target = e.target as HTMLElement;
+                if (target === e.currentTarget) {
+                  return;
+                }
+              }}
             >
               <div ref={timelineContainerRef} className="relative" style={{ minWidth: '1200px', minHeight: '500px', paddingRight: '8px' }}>
                 {/* Current time line indicator */}
