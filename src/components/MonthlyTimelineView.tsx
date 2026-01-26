@@ -492,7 +492,7 @@ export default function MonthlyTimelineView({
             <div
               ref={leftScrollRef}
               onScroll={handleLeftScroll}
-              className={`flex-shrink-0 border-r-2 border-gray-300 overflow-y-auto relative bg-white w-full md:w-1/2
+              className={`flex-shrink-0 border-r-2 border-gray-300 overflow-y-auto scrollbar-thin relative bg-white w-full md:w-1/2
                 ${mobileView === 'calendar' ? 'hidden md:block' : ''}`}
             >
                 {/* Tasks label - sticky at top with navigation arrows */}
@@ -588,7 +588,7 @@ export default function MonthlyTimelineView({
             <div
               ref={leftScrollRef}
               onScroll={handleLeftScroll}
-              className={`flex-shrink-0 border-r-2 border-gray-300 overflow-y-auto relative bg-white w-full md:w-1/2
+              className={`flex-shrink-0 border-r-2 border-gray-300 overflow-y-auto scrollbar-thin relative bg-white w-full md:w-1/2
                 ${mobileView === 'calendar' ? 'hidden md:block' : ''}`}
             >
                 {/* Tasks label - sticky at top with navigation arrows */}
@@ -763,7 +763,7 @@ export default function MonthlyTimelineView({
             <div 
               ref={rightScrollRef}
               onScroll={handleRightScroll}
-              className={`flex-1 overflow-auto scrollbar-thin
+              className={`flex-1 overflow-y-auto scrollbar-thin
                 ${mobileView === 'checklist' ? 'hidden md:block' : ''}`}
             >
               <div ref={timelineContainerRef} className="relative" style={{ minWidth: '1200px', minHeight: '500px', paddingRight: '8px' }}>
