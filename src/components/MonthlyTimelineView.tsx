@@ -1,8 +1,26 @@
-import { Task } from '../types';
+import { Task, SortBy } from '../types';
 import TimelineBar from './TimelineBar';
 import { useState, useRef, useEffect } from 'react';
 import { getImportanceColor } from '../utils/importance';
 import { Clock } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface MonthlyTimelineViewProps {
   tasks: Task[];
@@ -11,6 +29,8 @@ interface MonthlyTimelineViewProps {
   onStartTimeChange?: (id: string, startDate: Date) => void;
   onToggleComplete?: (id: string) => void;
   onDeleteTask?: (id: string) => void;
+  onReorderTasks?: (reorderedTasks: Task[]) => void;
+  sortBy?: SortBy;
   currentDate: Date;
   onDateChange: (date: Date) => void;
   mobileView?: 'checklist' | 'calendar'; // For mobile-only tab switching
@@ -18,7 +38,164 @@ interface MonthlyTimelineViewProps {
   manuallyAdjustedTasks?: Set<string>;
   onManualAdjust?: (id: string) => void;
   currentTimePosition?: number; // Synced timeline position (0-100)
-  onTimePositionChange?: (percentage: number) => void; // Callback for timeline position changes
+}
+
+// Sortable Task Card Component for Monthly View
+interface SortableTaskCardProps {
+  task: Task;
+  height: number;
+  isSubtask: boolean;
+  isActive: boolean;
+  isMenuOpen: boolean;
+  onMenuToggle: () => void;
+  onProgressChange: (id: string, progress: number) => void;
+  onManualAdjust?: (id: string) => void;
+  onDeleteTask?: (id: string) => void;
+  showDragHandle: boolean;
+}
+
+function SortableTaskCard({
+  task,
+  height,
+  isSubtask,
+  isActive,
+  isMenuOpen,
+  onMenuToggle,
+  onProgressChange,
+  onManualAdjust,
+  onDeleteTask,
+  showDragHandle,
+}: SortableTaskCardProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: task.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : task.completed ? 0.25 : 1,
+  };
+
+  const colors = getImportanceColor(task.importance);
+
+  return (
+    <div ref={setNodeRef} style={style} className="relative">
+      {/* Task card with progress background */}
+      <div
+        className={`relative flex items-center gap-2 px-2 border border-gray-200 hover:bg-gray-50 overflow-hidden w-full transition-shadow
+          ${isActive ? 'shadow-lg' : ''}`}
+        style={{
+          height: `${height}px`,
+          borderRadius: '16px',
+          backgroundColor: 'white',
+          transition: 'opacity 0.3s ease'
+        }}
+      >
+        {/* Progress background overlay */}
+        <div
+          className="absolute inset-0 transition-all duration-300"
+          style={{
+            width: `${isSubtask ? 100 : task.progress}%`,
+            backgroundColor: colors.fill,
+            borderRadius: '16px'
+          }}
+        />
+        
+        {/* Invisible progress slider overlay */}
+        {!isSubtask && (
+          <input
+            type="range"
+            min="0"
+            max="100"
+            value={task.progress}
+            onChange={(e) => onProgressChange(task.id, parseInt(e.target.value))}
+            onMouseDown={() => onManualAdjust?.(task.id)}
+            onTouchStart={() => onManualAdjust?.(task.id)}
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+          />
+        )}
+
+        {/* Content on top of progress */}
+        <div className="relative z-20 flex items-center gap-2 w-full pointer-events-none">
+          {/* Drag handle (6 dots) - only visible when showDragHandle is true */}
+          {showDragHandle && (
+            <button
+              {...attributes}
+              {...listeners}
+              className="flex-shrink-0 text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing pointer-events-auto"
+              aria-label="Drag to reorder"
+            >
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                <circle cx="7" cy="5" r="1.5" />
+                <circle cx="13" cy="5" r="1.5" />
+                <circle cx="7" cy="10" r="1.5" />
+                <circle cx="13" cy="10" r="1.5" />
+                <circle cx="7" cy="15" r="1.5" />
+                <circle cx="13" cy="15" r="1.5" />
+              </svg>
+            </button>
+          )}
+          
+          {/* Task title */}
+          <span className="flex-1 text-xs font-medium truncate text-gray-700">
+            {task.title}
+          </span>
+
+          {/* Three-dot menu - moved to the right */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onMenuToggle();
+            }}
+            className="flex-shrink-0 text-gray-500 hover:text-gray-700 pointer-events-auto"
+          >
+            <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
+              <circle cx="8" cy="6" r="1.5" />
+              <circle cx="8" cy="10" r="1.5" />
+              {!isSubtask && <circle cx="8" cy="14" r="1.5" />}
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {/* Pop-up menu - OUTSIDE the overflow-hidden container */}
+      {isMenuOpen && (
+        <>
+          <div 
+            className="fixed inset-0 z-40" 
+            onClick={onMenuToggle}
+          />
+          <div className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 min-w-[180px]">
+            <button
+              onClick={() => {
+                if (onDeleteTask) {
+                  onDeleteTask(task.id);
+                  onMenuToggle();
+                }
+              }}
+              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+            >
+              Delete task
+            </button>
+            <button
+              onClick={() => {
+                // TODO: Implement importance level change
+                onMenuToggle();
+              }}
+              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              Change importance level
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
 }
 
 export default function MonthlyTimelineView({
@@ -28,23 +205,51 @@ export default function MonthlyTimelineView({
   onStartTimeChange,
   onToggleComplete,
   onDeleteTask,
+  onReorderTasks,
+  sortBy = null,
   currentDate,
   onDateChange,
   mobileView = 'checklist',
   autoProgressEnabled = false,
   manuallyAdjustedTasks = new Set(),
   onManualAdjust,
-  currentTimePosition = 25,
-  onTimePositionChange
+  currentTimePosition = 25
 }: MonthlyTimelineViewProps) {
   const [menuOpenTaskId, setMenuOpenTaskId] = useState<string | null>(null);
-  const [isDraggingTimeLine, setIsDraggingTimeLine] = useState(false);
   const leftScrollRef = useRef<HTMLDivElement>(null);
   const rightScrollRef = useRef<HTMLDivElement>(null);
   const timelineContainerRef = useRef<HTMLDivElement>(null);
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
   const monthStart = new Date(year, month, 1);
+
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(TouchSensor, {
+      // Require a 5px movement before activating to prevent conflicts with tap/click
+      activationConstraint: {
+        delay: 100,
+        tolerance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Handle drag end for reordering tasks
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = tasks.findIndex((task) => task.id === active.id);
+      const newIndex = tasks.findIndex((task) => task.id === over.id);
+
+      const reorderedTasks = arrayMove(tasks, oldIndex, newIndex);
+      onReorderTasks?.(reorderedTasks);
+    }
+  };
 
   // Format date for header
   const formatMonthlyHeader = () => {
@@ -177,36 +382,6 @@ export default function MonthlyTimelineView({
     return currentTimePosition >= taskStartPercent && currentTimePosition <= taskEndPercent;
   };
 
-  // Handle current time line dragging
-  const handleTimeLineMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsDraggingTimeLine(true);
-  };
-
-  const handleTimeLineMouseMove = (e: MouseEvent) => {
-    if (!isDraggingTimeLine || !timelineContainerRef.current) return;
-    
-    const rect = timelineContainerRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const percentage = Math.max(0, Math.min(100, (x / rect.width) * 100));
-    onTimePositionChange?.(percentage);
-  };
-
-  const handleTimeLineMouseUp = () => {
-    setIsDraggingTimeLine(false);
-  };
-
-  // Add/remove event listeners for time line dragging
-  useEffect(() => {
-    if (isDraggingTimeLine) {
-      window.addEventListener('mousemove', handleTimeLineMouseMove);
-      window.addEventListener('mouseup', handleTimeLineMouseUp);
-      return () => {
-        window.removeEventListener('mousemove', handleTimeLineMouseMove);
-        window.removeEventListener('mouseup', handleTimeLineMouseUp);
-      };
-    }
-  }, [isDraggingTimeLine]);
 
   
   // Get first and last day of current month
@@ -366,15 +541,14 @@ export default function MonthlyTimelineView({
               <div ref={timelineContainerRef} className="relative" style={{ minWidth: '1200px', minHeight: '500px', paddingRight: '8px' }}>
                 {/* Current time line indicator */}
                 <div
-                  className="absolute top-0 bottom-0 w-1 bg-red-500 cursor-ew-resize hover:w-1.5 transition-all"
+                  className="absolute top-0 bottom-0 w-1 bg-red-500 transition-all"
                   style={{
                     left: `${currentTimePosition}%`,
                     zIndex: 100
                   }}
-                  onMouseDown={handleTimeLineMouseDown}
                 >
-                  {/* Draggable handle at top */}
-                  <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-red-500 rounded-full cursor-grab active:cursor-grabbing" />
+                  {/* Time indicator handle at top */}
+                  <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-red-500 rounded-full" />
                 </div>
 
                 {/* Day labels - now part of scrollable content */}
@@ -520,117 +694,41 @@ export default function MonthlyTimelineView({
                 </div>
 
                 {/* Task cards column (~65%) */}
-                <div className="flex flex-col gap-2 px-2" style={{ flex: '1 1 65%' }}>
-                  {monthTasks.map(task => {
-                    const isMenuOpen = menuOpenTaskId === task.id;
-                    
-                    // Calculate dynamic height based on totalTasks
-                    const maxHeight = 60;
-                    const minHeight = 32;
-                    // Calculate height: subtasks are 50% height of regular tasks
-                    const baseHeight = Math.max(minHeight, Math.min(maxHeight, 400 / monthTasks.length));
-                    const height = isSubtask(task) ? Math.max(minHeight * 0.5, baseHeight * 0.5) : baseHeight;
-                    
-                    // Get importance color (same as timeline bars)
-                    const colors = getImportanceColor(task.importance);
-                    
-                    return (
-                      <div key={task.id} className="relative">
-                        {/* Task card with progress background */}
-                        <div
-                          className={`relative flex items-center gap-2 px-2 border border-gray-200 hover:bg-gray-50 overflow-hidden w-full transition-shadow
-                            ${isTaskActive(task) ? 'shadow-lg' : ''}`}
-                          style={{
-                            height: `${height}px`,
-                            borderRadius: '16px',
-                            backgroundColor: 'white',
-                            opacity: task.completed ? 0.25 : 1,
-                            transition: 'opacity 0.3s ease'
-                          }}
-                        >
-                          {/* Progress background overlay */}
-                          <div
-                            className="absolute inset-0 transition-all duration-300"
-                            style={{
-                              width: `${isSubtask(task) ? 100 : task.progress}%`,
-                              backgroundColor: colors.fill,
-                              borderRadius: '16px'
-                            }}
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  <SortableContext
+                    items={monthTasks.map(t => t.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="flex flex-col gap-2 px-2" style={{ flex: '1 1 65%' }}>
+                      {monthTasks.map(task => {
+                        const maxHeight = 60;
+                        const minHeight = 32;
+                        const baseHeight = Math.max(minHeight, Math.min(maxHeight, 400 / monthTasks.length));
+                        const height = isSubtask(task) ? Math.max(minHeight * 0.5, baseHeight * 0.5) : baseHeight;
+                        
+                        return (
+                          <SortableTaskCard
+                            key={task.id}
+                            task={task}
+                            height={height}
+                            isSubtask={isSubtask(task)}
+                            isActive={isTaskActive(task)}
+                            isMenuOpen={menuOpenTaskId === task.id}
+                            onMenuToggle={() => setMenuOpenTaskId(menuOpenTaskId === task.id ? null : task.id)}
+                            onProgressChange={onProgressChange}
+                            onManualAdjust={onManualAdjust}
+                            onDeleteTask={onDeleteTask}
+                            showDragHandle={sortBy === null}
                           />
-                          
-                          {/* Invisible progress slider overlay */}
-                          {!isSubtask(task) && (
-                            <input
-                              type="range"
-                              min="0"
-                              max="100"
-                              value={task.progress}
-                              onChange={(e) => onProgressChange(task.id, parseInt(e.target.value))}
-                              onMouseDown={() => onManualAdjust?.(task.id)}
-                              onTouchStart={() => onManualAdjust?.(task.id)}
-                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                            />
-                          )}
-
-                          {/* Content on top of progress */}
-                          <div className="relative z-20 flex items-center gap-2 w-full pointer-events-none">
-                            {/* Three-dot menu */}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setMenuOpenTaskId(isMenuOpen ? null : task.id);
-                              }}
-                              className="flex-shrink-0 text-gray-500 hover:text-gray-700 pointer-events-auto"
-                            >
-                              <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
-                                <circle cx="8" cy="3" r="1.5" />
-                                <circle cx="8" cy="8" r="1.5" />
-                                <circle cx="8" cy="13" r="1.5" />
-                              </svg>
-                            </button>
-                            
-                            {/* Task title */}
-                            <span className="flex-1 text-xs font-medium truncate text-gray-700">
-                              {task.title}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Pop-up menu - OUTSIDE the overflow-hidden container */}
-                        {isMenuOpen && (
-                          <>
-                            <div 
-                              className="fixed inset-0 z-40" 
-                              onClick={() => setMenuOpenTaskId(null)}
-                            />
-                            <div className="absolute left-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 min-w-[180px]">
-                              <button
-                                onClick={() => {
-                                  if (onDeleteTask) {
-                                    onDeleteTask(task.id);
-                                    setMenuOpenTaskId(null);
-                                  }
-                                }}
-                                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                              >
-                                Delete task
-                              </button>
-                              <button
-                                onClick={() => {
-                                  // TODO: Implement importance level change
-                                  setMenuOpenTaskId(null);
-                                }}
-                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                              >
-                                Change importance level
-                              </button>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+                        );
+                      })}
+                    </div>
+                  </SortableContext>
+                </DndContext>
 
                 {/* Status column (~25%) */}
                 <div className="flex flex-col gap-2 px-2" style={{ flex: '0 0 25%' }}>
@@ -671,15 +769,14 @@ export default function MonthlyTimelineView({
               <div ref={timelineContainerRef} className="relative" style={{ minWidth: '1200px', minHeight: '500px', paddingRight: '8px' }}>
                 {/* Current time line indicator */}
                 <div
-                  className="absolute top-0 bottom-0 w-1 bg-red-500 cursor-ew-resize hover:w-1.5 transition-all"
+                  className="absolute top-0 bottom-0 w-1 bg-red-500 transition-all"
                   style={{
                     left: `${currentTimePosition}%`,
                     zIndex: 100
                   }}
-                  onMouseDown={handleTimeLineMouseDown}
                 >
-                  {/* Draggable handle at top */}
-                  <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-red-500 rounded-full cursor-grab active:cursor-grabbing" />
+                  {/* Time indicator handle at top */}
+                  <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-red-500 rounded-full" />
                 </div>
 
                 {/* Day labels - now part of scrollable content */}

@@ -9,6 +9,7 @@ export interface Task {
   completed: boolean; // marked as done
   createdAt: Date;
   originalViewMode: ViewMode; // which view mode the task was created in
+  customOrder: number; // for manual ordering when sortBy is null
 }
 
 export type ViewMode = 'daily' | 'weekly' | 'monthly';

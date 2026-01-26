@@ -68,10 +68,26 @@ export default function TimelineBar({
     setIsResizing(true);
   };
 
+  const handleResizeTouchStart = (e: React.TouchEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    dragStartX.current = e.touches[0].clientX;
+    dragStartPosition.current = width;
+    setIsResizing(true);
+  };
+
   const handleDragMouseDown = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
     dragStartX.current = e.clientX;
+    dragStartPosition.current = startPosition;
+    setIsDragging(true);
+  };
+
+  const handleDragTouchStart = (e: React.TouchEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    dragStartX.current = e.touches[0].clientX;
     dragStartPosition.current = startPosition;
     setIsDragging(true);
   };
@@ -102,19 +118,42 @@ export default function TimelineBar({
       onDurationChange(task.id, parseFloat(newDuration.toFixed(1)));
     };
 
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!containerRef.current || !onDurationChange) return;
+
+      const container = containerRef.current;
+      const containerRect = container.getBoundingClientRect();
+      const containerWidth = containerRect.width;
+      const touchX = e.touches[0].clientX - containerRect.left;
+      const barStartX = (startPosition / 100) * containerWidth;
+      const newBarWidth = touchX - barStartX;
+      const newWidthPercent = (newBarWidth / containerWidth) * 100;
+      const newDuration = Math.max(0.5, (newWidthPercent / 100) * totalHours);
+      
+      onDurationChange(task.id, parseFloat(newDuration.toFixed(1)));
+    };
+
     const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    const handleTouchEnd = () => {
       setIsResizing(false);
     };
 
     if (isResizing) {
       window.addEventListener('mousemove', handleMouseMove);
       window.addEventListener('mouseup', handleMouseUp);
+      window.addEventListener('touchmove', handleTouchMove);
+      window.addEventListener('touchend', handleTouchEnd);
       return () => {
         window.removeEventListener('mousemove', handleMouseMove);
         window.removeEventListener('mouseup', handleMouseUp);
+        window.removeEventListener('touchmove', handleTouchMove);
+        window.removeEventListener('touchend', handleTouchEnd);
       };
     }
-  }, [isResizing, startPosition, task.id, onDurationChange]);
+  }, [isResizing, startPosition, task.id, onDurationChange, totalHours]);
 
   // Drag event listeners
   useEffect(() => {
@@ -147,19 +186,56 @@ export default function TimelineBar({
       onStartTimeChange(task.id, newStartDate);
     };
 
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!containerRef.current || !onStartTimeChange || !task.startDate) return;
+
+      const container = containerRef.current;
+      const containerRect = container.getBoundingClientRect();
+      const containerWidth = containerRect.width;
+      const deltaX = e.touches[0].clientX - dragStartX.current;
+      const deltaPercent = (deltaX / containerWidth) * 100;
+      const newPosition = Math.max(0, Math.min(100 - width, dragStartPosition.current + deltaPercent));
+
+      let newStartDate: Date;
+
+      if (mondayDate && totalHours > 24) {
+        // Weekly/monthly view: calculate date from monday reference
+        const totalMinutes = (newPosition / 100) * totalHours * 60;
+        const newDate = new Date(mondayDate.getTime() + totalMinutes * 60 * 1000);
+        newStartDate = newDate;
+      } else {
+        // Daily view: calculate hour within the current day
+        const newStartHour = (newPosition / 100) * 24;
+        newStartDate = new Date(task.startDate);
+        const hours = Math.floor(newStartHour);
+        const minutes = Math.round((newStartHour - hours) * 60);
+        newStartDate.setHours(hours, minutes, 0, 0);
+      }
+
+      onStartTimeChange(task.id, newStartDate);
+    };
+
     const handleDragUp = () => {
+      setIsDragging(false);
+    };
+
+    const handleTouchEnd = () => {
       setIsDragging(false);
     };
 
     if (isDragging) {
       window.addEventListener('mousemove', handleDragMove);
       window.addEventListener('mouseup', handleDragUp);
+      window.addEventListener('touchmove', handleTouchMove);
+      window.addEventListener('touchend', handleTouchEnd);
       return () => {
         window.removeEventListener('mousemove', handleDragMove);
         window.removeEventListener('mouseup', handleDragUp);
+        window.removeEventListener('touchmove', handleTouchMove);
+        window.removeEventListener('touchend', handleTouchEnd);
       };
     }
-  }, [isDragging, width, task.id, task.startDate, onStartTimeChange]);
+  }, [isDragging, width, task.id, task.startDate, onStartTimeChange, mondayDate, totalHours]);
 
   return (
     <div 
@@ -230,6 +306,7 @@ export default function TimelineBar({
             <div
               className="absolute left-0 top-0 bottom-0 w-6 cursor-move z-20 flex items-center justify-center pointer-events-auto"
               onMouseDown={handleDragMouseDown}
+              onTouchStart={handleDragTouchStart}
               onMouseEnter={() => setIsHoveringHandle(true)}
               onMouseLeave={() => setIsHoveringHandle(false)}
               style={{
@@ -304,6 +381,7 @@ export default function TimelineBar({
             <div
               className="absolute right-0 top-0 bottom-0 cursor-ew-resize z-30 pointer-events-auto"
               onMouseDown={handleResizeMouseDown}
+              onTouchStart={handleResizeTouchStart}
               onMouseEnter={() => setIsHoveringEdge(true)}
               style={{
                 width: '14px',

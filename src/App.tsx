@@ -15,7 +15,6 @@ function App() {
   const [sortBy, setSortBy] = useState<SortBy>(null);
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
-  const [currentTimeOffset, setCurrentTimeOffset] = useState<number>(new Date().getHours()); // Hours from start of current period (default to current hour)
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [mobileView, setMobileView] = useState<'checklist' | 'calendar'>('checklist'); // For mobile only
   const [autoProgressEnabled, setAutoProgressEnabled] = useState(false);
@@ -30,9 +29,11 @@ function App() {
       const mockTasks = generateMockTasks();
       setTasks(mockTasks);
     } else {
-      const tasksWithUrgency = loadedTasks.map(task => ({
+      const tasksWithUrgency = loadedTasks.map((task, index) => ({
         ...task,
         urgency: calculateUrgency(task),
+        // Migrate old tasks without customOrder
+        customOrder: task.customOrder !== undefined ? task.customOrder : index,
       }));
       setTasks(tasksWithUrgency);
     }
@@ -45,7 +46,9 @@ function App() {
     }
   }, [tasks]);
 
-  const handleCreateTask = (taskData: Omit<Task, 'id' | 'urgency' | 'createdAt' | 'completed' | 'originalViewMode'>) => {
+  const handleCreateTask = (taskData: Omit<Task, 'id' | 'urgency' | 'createdAt' | 'completed' | 'originalViewMode' | 'customOrder'>) => {
+    // Find the highest customOrder and add 1
+    const maxOrder = tasks.length > 0 ? Math.max(...tasks.map(t => t.customOrder)) : -1;
     const newTask: Task = {
       ...taskData,
       id: Date.now().toString(),
@@ -53,6 +56,7 @@ function App() {
       completed: false,
       createdAt: new Date(),
       originalViewMode: viewMode,
+      customOrder: maxOrder + 1,
     };
     setTasks([...tasks, newTask]);
     setIsCreateTaskOpen(false); // Close the form after creating a task
@@ -68,88 +72,49 @@ function App() {
     setManuallyAdjustedTasks(prev => new Set(prev).add(id));
   };
 
-  // Calculate current time position percentage for each view
+  // Calculate current time position percentage for each view based on real current time
   const getCurrentTimePosition = (viewMode: ViewMode): number => {
+    const now = new Date();
+    
     if (viewMode === 'daily') {
-      // For daily: currentTimeOffset is hours from midnight of current day
-      return Math.min(100, Math.max(0, (currentTimeOffset / 24) * 100));
+      // For daily: calculate position based on current hour and minutes
+      const hours = now.getHours();
+      const minutes = now.getMinutes();
+      const totalHours = hours + minutes / 60;
+      return Math.min(100, Math.max(0, (totalHours / 24) * 100));
     } else if (viewMode === 'weekly') {
-      // For weekly: calculate position based on current date + currentTimeOffset
+      // For weekly: calculate position based on current day and time in the week
       const monday = new Date(currentDate);
       monday.setDate(currentDate.getDate() - (currentDate.getDay() === 0 ? 6 : currentDate.getDay() - 1));
       monday.setHours(0, 0, 0, 0);
 
-      // Create a date representing the current timeline position
-      const timelineDate = new Date(currentDate);
-      timelineDate.setHours(currentTimeOffset, 0, 0, 0);
-
-      // Calculate position within the week
       const weekStart = new Date(monday);
       const weekEnd = new Date(monday);
       weekEnd.setDate(weekEnd.getDate() + 7);
 
-      const weekProgress = (timelineDate.getTime() - weekStart.getTime()) / (weekEnd.getTime() - weekStart.getTime());
+      const weekProgress = (now.getTime() - weekStart.getTime()) / (weekEnd.getTime() - weekStart.getTime());
       return Math.min(100, Math.max(0, weekProgress * 100));
     } else if (viewMode === 'monthly') {
       // For monthly: calculate position within the month
       const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
       const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
 
-      const timelineDate = new Date(currentDate);
-      timelineDate.setHours(currentTimeOffset, 0, 0, 0);
-
-      const monthProgress = (timelineDate.getTime() - monthStart.getTime()) / (monthEnd.getTime() - monthStart.getTime());
+      const monthProgress = (now.getTime() - monthStart.getTime()) / (monthEnd.getTime() - monthStart.getTime());
       return Math.min(100, Math.max(0, monthProgress * 100));
     }
     return 25; // Default fallback
   };
 
-  // Handle timeline position changes from any view
-  const handleTimePositionChange = (percentage: number, viewMode: ViewMode) => {
-    let newOffset: number;
+  // Update timeline position every minute to reflect real time
+  useEffect(() => {
+    // Force re-render every minute to update the timeline
+    const interval = setInterval(() => {
+      // This will trigger a re-render, causing getCurrentTimePosition to recalculate
+      setTasks(tasks => [...tasks]);
+    }, 60000); // Update every 60 seconds
 
-    if (viewMode === 'daily') {
-      // Convert percentage to hours from midnight of current day
-      newOffset = (percentage / 100) * 24;
-    } else if (viewMode === 'weekly') {
-      // Convert percentage position to actual time within the week
-      const monday = new Date(currentDate);
-      monday.setDate(currentDate.getDate() - (currentDate.getDay() === 0 ? 6 : currentDate.getDay() - 1));
-      monday.setHours(0, 0, 0, 0);
-
-      const weekDurationMs = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
-      const positionMs = (percentage / 100) * weekDurationMs;
-      const targetTime = new Date(monday.getTime() + positionMs);
-
-      // Calculate which day and hour this corresponds to relative to current date
-      const daysDiff = Math.floor((targetTime.getTime() - currentDate.getTime()) / (24 * 60 * 60 * 1000));
-      const targetDate = new Date(currentDate);
-      targetDate.setDate(currentDate.getDate() + daysDiff);
-      targetDate.setHours(targetTime.getHours(), 0, 0, 0);
-
-      // Calculate offset from current date midnight
-      const currentMidnight = new Date(currentDate);
-      currentMidnight.setHours(0, 0, 0, 0);
-      newOffset = (targetDate.getTime() - currentMidnight.getTime()) / (60 * 60 * 1000);
-    } else if (viewMode === 'monthly') {
-      // Convert percentage to hours from current date
-      const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-      const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
-
-      const monthDurationMs = monthEnd.getTime() - monthStart.getTime();
-      const positionMs = (percentage / 100) * monthDurationMs;
-      const targetTime = new Date(monthStart.getTime() + positionMs);
-
-      // Calculate offset from current date midnight
-      const currentMidnight = new Date(currentDate);
-      currentMidnight.setHours(0, 0, 0, 0);
-      newOffset = (targetTime.getTime() - currentMidnight.getTime()) / (60 * 60 * 1000);
-    } else {
-      newOffset = currentTimeOffset;
-    }
-
-    setCurrentTimeOffset(Math.max(0, newOffset));
-  };
+    return () => clearInterval(interval);
+  }, []);
 
   const handleDurationChange = (id: string, duration: number) => {
     setTasks(tasks.map(task =>
@@ -181,6 +146,15 @@ function App() {
     setTasks(tasks.filter(task => task.id !== id));
   };
 
+  const handleReorderTasks = (reorderedTasks: Task[]) => {
+    // Update customOrder based on new positions
+    const updatedTasks = reorderedTasks.map((task, index) => ({
+      ...task,
+      customOrder: index,
+    }));
+    setTasks(updatedTasks);
+  };
+
   const handleSort = (field: SortBy) => {
     if (sortBy === field) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
@@ -197,7 +171,10 @@ function App() {
 
   // Sort tasks
   const sortedTasks = [...tasks].sort((a, b) => {
-    if (!sortBy) return 0;
+    if (!sortBy) {
+      // When no sort is selected, use custom order
+      return a.customOrder - b.customOrder;
+    }
     
     let comparison = 0;
     if (sortBy === 'urgency') {
@@ -223,6 +200,8 @@ function App() {
             onStartTimeChange={handleStartTimeChange}
             onToggleComplete={handleToggleComplete}
             onDeleteTask={handleDeleteTask}
+            onReorderTasks={handleReorderTasks}
+            sortBy={sortBy}
             currentDate={currentDate}
             onDateChange={setCurrentDate}
             dayStartHour={0}
@@ -231,7 +210,6 @@ function App() {
             manuallyAdjustedTasks={manuallyAdjustedTasks}
             onManualAdjust={handleManualAdjust}
             currentTimePosition={getCurrentTimePosition('daily')}
-            onTimePositionChange={(percentage) => handleTimePositionChange(percentage, 'daily')}
           />
         );
       case 'weekly':
@@ -243,6 +221,8 @@ function App() {
             onStartTimeChange={handleStartTimeChange}
             onToggleComplete={handleToggleComplete}
             onDeleteTask={handleDeleteTask}
+            onReorderTasks={handleReorderTasks}
+            sortBy={sortBy}
             currentDate={currentDate}
             onDateChange={setCurrentDate}
             mobileView={mobileView}
@@ -250,7 +230,6 @@ function App() {
             manuallyAdjustedTasks={manuallyAdjustedTasks}
             onManualAdjust={handleManualAdjust}
             currentTimePosition={getCurrentTimePosition('weekly')}
-            onTimePositionChange={(percentage) => handleTimePositionChange(percentage, 'weekly')}
           />
         );
       case 'monthly':
@@ -262,6 +241,8 @@ function App() {
             onStartTimeChange={handleStartTimeChange}
             onToggleComplete={handleToggleComplete}
             onDeleteTask={handleDeleteTask}
+            onReorderTasks={handleReorderTasks}
+            sortBy={sortBy}
             currentDate={currentDate}
             onDateChange={setCurrentDate}
             mobileView={mobileView}
@@ -269,7 +250,6 @@ function App() {
             manuallyAdjustedTasks={manuallyAdjustedTasks}
             onManualAdjust={handleManualAdjust}
             currentTimePosition={getCurrentTimePosition('monthly')}
-            onTimePositionChange={(percentage) => handleTimePositionChange(percentage, 'monthly')}
           />
         );
       default:
