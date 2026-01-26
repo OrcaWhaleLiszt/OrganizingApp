@@ -377,9 +377,22 @@ export default function WeeklyTimelineView({
               {/* Three-column layout: Checkbox (40px) | Tasks (~65%) | Status (~25%) */}
               <div className="flex" style={{ paddingTop: '60px' }}>
                 {weekTasks.length === 0 ? (
-                  <div className="flex-1 flex items-center justify-center text-gray-500 text-sm py-8">
-                    No tasks scheduled for this week
-                  </div>
+                  <>
+                    {/* Empty checkbox column */}
+                    <div className="flex flex-col gap-2 px-1" style={{ width: '40px', flexShrink: 0 }}>
+                      {/* Empty */}
+                    </div>
+
+                    {/* Empty task cards column */}
+                    <div className="flex flex-col gap-2 px-2" style={{ flex: '1 1 65%' }}>
+                      {/* Empty */}
+                    </div>
+
+                    {/* Empty status column */}
+                    <div className="flex flex-col gap-2 px-2" style={{ flex: '0 0 25%' }}>
+                      {/* Empty */}
+                    </div>
+                  </>
                 ) : (
                   <>
                     {/* Checkbox column (minimal width) */}
@@ -707,13 +720,11 @@ export default function WeeklyTimelineView({
                         mondayDate={monday}
                       />
                     );
-                    })}
-                  </div>
-                </>
-              )}
+                  })}
+                </div>
+              </div>
             </div>
           </>
-        )
       </div>
     </div>
   );

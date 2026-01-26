@@ -15,7 +15,7 @@ function App() {
   const [sortBy, setSortBy] = useState<SortBy>(null);
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
-  const [currentTimeOffset, setCurrentTimeOffset] = useState<number>(12); // Hours from start of current period (default to noon)
+  const [currentTimeOffset, setCurrentTimeOffset] = useState<number>(new Date().getHours()); // Hours from start of current period (default to current hour)
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [mobileView, setMobileView] = useState<'checklist' | 'calendar'>('checklist'); // For mobile only
   const [autoProgressEnabled, setAutoProgressEnabled] = useState(false);

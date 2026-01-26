@@ -338,8 +338,22 @@ export default function MonthlyTimelineView({
                     ›
                   </button>
                 </div>
-                <div className="flex items-center justify-center text-gray-500 text-sm py-8" style={{ paddingTop: '60px' }}>
-                  No tasks scheduled for this month
+                {/* Three-column layout: Checkbox (40px) | Tasks (~65%) | Status (~25%) */}
+                <div className="flex" style={{ paddingTop: '60px' }}>
+                  {/* Empty checkbox column */}
+                  <div className="flex flex-col gap-2 px-1" style={{ width: '40px', flexShrink: 0 }}>
+                    {/* Empty */}
+                  </div>
+
+                  {/* Empty task cards column */}
+                  <div className="flex flex-col gap-2 px-2" style={{ flex: '1 1 65%' }}>
+                    {/* Empty */}
+                  </div>
+
+                  {/* Empty status column */}
+                  <div className="flex flex-col gap-2 px-2" style={{ flex: '0 0 25%' }}>
+                    {/* Empty */}
+                  </div>
                 </div>
             </div>
             {/* Right panel - Timeline (scrollable) */}
@@ -361,6 +375,35 @@ export default function MonthlyTimelineView({
                 >
                   {/* Draggable handle at top */}
                   <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-red-500 rounded-full cursor-grab active:cursor-grabbing" />
+                </div>
+
+                {/* Day labels - now part of scrollable content */}
+                <div className="flex h-10 sticky top-0 bg-gray-50 z-10">
+                  {dayLabels.map((day, index) => {
+                    const nextDay = dayLabels[index + 1] || daysInMonth + 1;
+                    const width = ((nextDay - day) / totalDays) * 100;
+
+                    return (
+                      <div
+                        key={day}
+                        className="text-center text-xs text-gray-500 flex items-center justify-center font-medium"
+                        style={{ width: `${width}%` }}
+                      >
+                        Day {day}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Background grid */}
+                <div className="absolute inset-0 flex" style={{ top: '40px' }}>
+                  {Array.from({ length: Math.ceil(daysInMonth / 3) }, (_, i) => (
+                    <div
+                      key={i}
+                      className="flex-1 border-r border-gray-200"
+                      style={{ height: '100%' }}
+                    />
+                  ))}
                 </div>
               </div>
             </div>
@@ -394,10 +437,9 @@ export default function MonthlyTimelineView({
                 </div>
                 {/* Three-column layout: Checkbox (40px) | Tasks (~65%) | Status (~25%) */}
                 <div className="flex" style={{ paddingTop: '60px' }}>
-                  <>
-                    {/* Checkbox column (minimal width) */}
-                    <div className="flex flex-col gap-2 px-1" style={{ width: '40px', flexShrink: 0 }}>
-                  {monthTasks.map(task => {
+                  {/* Checkbox column (minimal width) */}
+                  <div className="flex flex-col gap-2 px-1" style={{ width: '40px', flexShrink: 0 }}>
+                    {monthTasks.map(task => {
                     // Calculate same dynamic height to match task cards
                     const maxHeight = 60;
                     const minHeight = 32;
@@ -614,10 +656,9 @@ export default function MonthlyTimelineView({
                         </span>
                       </div>
                     );
-                    })}
-                  </div>
-                </>
-              )}
+                  })}
+                </div>
+              </div>
             </div>
 
             {/* Right panel - Timeline (scrollable) */}
@@ -704,7 +745,8 @@ export default function MonthlyTimelineView({
               </div>
             </div>
           </>
-        )
+        )}
+      </div>
     </div>
   );
 }

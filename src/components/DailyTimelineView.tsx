@@ -300,8 +300,7 @@ export default function DailyTimelineView({
     <div className="w-full h-full flex flex-col">
       {/* Content area with integrated headers */}
       <div className="flex-1 flex overflow-hidden border-t-2 border-gray-300">
-        <>
-          {/* Left panel - Task list (scrollable) */}
+        {/* Left panel - Task list (scrollable) */}
           <div
             ref={leftScrollRef}
             onScroll={handleLeftScroll}
@@ -329,9 +328,22 @@ export default function DailyTimelineView({
               {/* Three-column layout: Checkbox (40px) | Tasks (~65%) | Status (~25%) */}
               <div className="flex" style={{ paddingTop: '60px' }}>
                 {todayTasks.length === 0 ? (
-                  <div className="flex-1 flex items-center justify-center text-gray-500 text-sm py-8">
-                    No tasks scheduled for today
-                  </div>
+                  <>
+                    {/* Empty checkbox column */}
+                    <div className="flex flex-col gap-2 px-1" style={{ width: '40px', flexShrink: 0 }}>
+                      {/* Empty */}
+                    </div>
+
+                    {/* Empty task cards column */}
+                    <div className="flex flex-col gap-2 px-2" style={{ flex: '1 1 65%' }}>
+                      {/* Empty */}
+                    </div>
+
+                    {/* Empty status column */}
+                    <div className="flex flex-col gap-2 px-2" style={{ flex: '0 0 25%' }}>
+                      {/* Empty */}
+                    </div>
+                  </>
                 ) : (
                   <>
                     {/* Checkbox column (minimal width) */}
@@ -556,6 +568,8 @@ export default function DailyTimelineView({
                     );
                   })}
                 </div>
+                  </>
+                )}
               </div>
             </div>
 
@@ -637,13 +651,10 @@ export default function DailyTimelineView({
                         totalHours={24}
                       />
                     );
-                    })}
-                  </div>
-                </>
-              )}
+                  })}
+                </div>
+              </div>
             </div>
-          </>
-        )
       </div>
     </div>
   );
