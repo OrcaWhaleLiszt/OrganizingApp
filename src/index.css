@@ -89,17 +89,16 @@ body {
   font-family: 'Montserrat', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  /* Prevent page scrolling on mobile */
+  /* Prevent page scrolling but allow internal scrolling */
   overflow: hidden;
-  position: fixed;
   width: 100%;
-  height: 100%;
+  height: 100vh;
 }
 
 /* Custom scrollbar styling - Large bubble style for mobile */
 .scrollbar-thin::-webkit-scrollbar {
-  height: 16px;
-  width: 16px;
+  height: 24px; /* Larger for horizontal scrollbars */
+  width: 20px;  /* Large for vertical scrollbars */
 }
 
 .scrollbar-thin::-webkit-scrollbar-track {
@@ -112,7 +111,8 @@ body {
   background: #3b82f6;
   border-radius: 12px;
   border: 3px solid #e2e8f0;
-  min-height: 40px;
+  min-height: 50px;
+  min-width: 50px;
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
