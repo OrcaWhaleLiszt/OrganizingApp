@@ -121,6 +121,7 @@ export default function CreateTaskForm({ onSubmit, viewMode, currentDate }: Crea
       duration: duration,
       progress: 0,
       completed: false,
+      customOrder: 0, // Will be overridden by App.tsx
     });
 
     // Reset form (keep duration, importance, and start time for convenience)

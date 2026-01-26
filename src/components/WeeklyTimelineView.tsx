@@ -586,9 +586,6 @@ export default function WeeklyTimelineView({
 
                       // For subtasks (carried over from daily), use timeline position
                       if (isSubtask(task)) {
-                        const taskStart = new Date(task.startDate);
-                        const taskEnd = new Date(taskStart.getTime() + task.duration * 60 * 60 * 1000);
-
                         // Calculate position in timeline
                         const taskDate = new Date(task.startDate);
                         const taskHour = taskDate.getHours();
