@@ -218,9 +218,14 @@ export default function DailyTimelineView({
   currentTimePosition = 25
 }: DailyTimelineViewProps) {
   const [menuOpenTaskId, setMenuOpenTaskId] = useState<string | null>(null);
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [showScrollIndicator, setShowScrollIndicator] = useState(false);
+  const [thumbWidth, setThumbWidth] = useState(20);
   const leftScrollRef = useRef<HTMLDivElement>(null);
   const rightScrollRef = useRef<HTMLDivElement>(null);
   const timelineContainerRef = useRef<HTMLDivElement>(null);
+  const scrollThumbRef = useRef<HTMLDivElement>(null);
+  const isDraggingScrollbar = useRef(false);
 
   // Drag and drop sensors
   const sensors = useSensors(
@@ -352,9 +357,90 @@ export default function DailyTimelineView({
     if (leftScrollRef.current && rightScrollRef.current) {
       leftScrollRef.current.scrollTop = rightScrollRef.current.scrollTop;
     }
+    
+    // Update scroll progress for floating scrollbar
+    if (rightScrollRef.current) {
+      const scrollLeft = rightScrollRef.current.scrollLeft;
+      const scrollWidth = rightScrollRef.current.scrollWidth;
+      const clientWidth = rightScrollRef.current.clientWidth;
+      const maxScroll = scrollWidth - clientWidth;
+      
+      if (maxScroll > 0) {
+        const progress = (scrollLeft / maxScroll) * 100;
+        const calculatedThumbWidth = (clientWidth / scrollWidth) * 100;
+        setScrollProgress(progress);
+        setThumbWidth(Math.max(15, Math.min(50, calculatedThumbWidth)));
+        setShowScrollIndicator(true);
+      } else {
+        setShowScrollIndicator(false);
+        setThumbWidth(100); // Full width when no scroll needed
+      }
+    }
   };
-
-
+  
+  // Handle custom scrollbar thumb drag
+  const handleScrollThumbDrag = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    isDraggingScrollbar.current = true;
+    
+    const track = (e.currentTarget as HTMLElement).parentElement;
+    if (!track || !rightScrollRef.current) return;
+    
+    const updateScroll = (clientX: number) => {
+      const trackRect = track.getBoundingClientRect();
+      const thumbWidthPx = (thumbWidth / 100) * track.clientWidth;
+      const maxThumbPos = track.clientWidth - thumbWidthPx;
+      
+      let thumbPos = clientX - trackRect.left - thumbWidthPx / 2;
+      thumbPos = Math.max(0, Math.min(maxThumbPos, thumbPos));
+      
+      const scrollRatio = maxThumbPos > 0 ? thumbPos / maxThumbPos : 0;
+      const maxScroll = rightScrollRef.current!.scrollWidth - rightScrollRef.current!.clientWidth;
+      rightScrollRef.current!.scrollLeft = scrollRatio * maxScroll;
+    };
+    
+    const handleMove = (moveEvent: MouseEvent | TouchEvent) => {
+      if (!isDraggingScrollbar.current) return;
+      moveEvent.preventDefault();
+      const clientX = 'touches' in moveEvent ? moveEvent.touches[0].clientX : moveEvent.clientX;
+      updateScroll(clientX);
+    };
+    
+    const handleEnd = () => {
+      isDraggingScrollbar.current = false;
+      document.removeEventListener('mousemove', handleMove);
+      document.removeEventListener('mouseup', handleEnd);
+      document.removeEventListener('touchmove', handleMove);
+      document.removeEventListener('touchend', handleEnd);
+    };
+    
+    document.addEventListener('mousemove', handleMove);
+    document.addEventListener('mouseup', handleEnd);
+    document.addEventListener('touchmove', handleMove, { passive: false });
+    document.addEventListener('touchend', handleEnd);
+    
+    // Initial update
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    updateScroll(clientX);
+  };
+  
+  // Handle track click
+  const handleTrackClick = (e: React.MouseEvent) => {
+    if (!rightScrollRef.current || isDraggingScrollbar.current) return;
+    
+    const track = e.currentTarget;
+    const trackRect = track.getBoundingClientRect();
+    const clickX = e.clientX - trackRect.left;
+    const thumbWidthPx = (thumbWidth / 100) * track.clientWidth;
+    
+    const thumbPos = clickX - thumbWidthPx / 2;
+    const maxThumbPos = track.clientWidth - thumbWidthPx;
+    const scrollRatio = maxThumbPos > 0 ? thumbPos / maxThumbPos : 0;
+    const maxScroll = rightScrollRef.current.scrollWidth - rightScrollRef.current.clientWidth;
+    
+    rightScrollRef.current.scrollLeft = Math.max(0, Math.min(maxScroll, scrollRatio * maxScroll));
+  };
 
   // Filter tasks that have a start time on currentDate
   const targetDate = new Date(currentDate);
@@ -369,6 +455,20 @@ export default function DailyTimelineView({
 
   // Check if task is a subtask (≤30 minutes)
   const isSubtask = (task: Task) => task.duration <= 0.5;
+
+  // Update scroll indicator visibility on mount and when content changes
+  useEffect(() => {
+    if (rightScrollRef.current && mobileView === 'calendar') {
+      const scrollWidth = rightScrollRef.current.scrollWidth;
+      const clientWidth = rightScrollRef.current.clientWidth;
+      const hasScroll = scrollWidth > clientWidth;
+      console.log('📱 Scroll check:', { scrollWidth, clientWidth, hasScroll, mobileView });
+      setShowScrollIndicator(hasScroll);
+      
+      // Trigger initial scroll update
+      handleRightScroll();
+    }
+  }, [mobileView, todayTasks.length]);
 
   // Auto-progress logic
   useEffect(() => {
@@ -473,6 +573,11 @@ export default function DailyTimelineView({
 
   return (
     <div className="w-full h-full flex flex-col">
+      {/* Debug indicator - REMOVE LATER */}
+      <div className="block md:hidden bg-yellow-300 text-black text-center py-1 text-xs font-bold">
+        Mobile View: {mobileView === 'calendar' ? '📅 CALENDAR' : '✅ CHECKLIST'}
+      </div>
+      
       {/* Content area with integrated headers */}
       <div className="flex-1 flex overflow-hidden border-t-2 border-gray-300">
         {/* Left panel - Task list (scrollable) */}
@@ -681,22 +786,26 @@ export default function DailyTimelineView({
             <div 
               ref={rightScrollRef}
               onScroll={handleRightScroll}
-              className={`flex-1 overflow-auto scrollbar-thin
+              className={`flex-1 overflow-auto scrollbar-thin relative
                 ${mobileView === 'checklist' ? 'hidden md:block' : ''}`}
               style={{ 
-                touchAction: 'none',
+                touchAction: 'pan-x pan-y',
                 overscrollBehavior: 'contain',
-                WebkitOverflowScrolling: 'auto'
-              }}
-              onTouchStart={(e) => {
-                // Only allow touch on scrollbars, not content
-                const target = e.target as HTMLElement;
-                if (target === e.currentTarget) {
-                  // Touched the container itself, not scrollbar
-                  return;
-                }
+                WebkitOverflowScrolling: 'touch',
+                paddingBottom: mobileView === 'calendar' ? '60px' : '0'
               }}
             >
+              {/* Scroll gradient indicators */}
+              {mobileView === 'calendar' && showScrollIndicator && (
+                <>
+                  {scrollProgress > 5 && (
+                    <div className="scroll-gradient-left md:hidden" />
+                  )}
+                  {scrollProgress < 95 && (
+                    <div className="scroll-gradient-right md:hidden" />
+                  )}
+                </>
+              )}
               <div ref={timelineContainerRef} className="relative" style={{ minWidth: '1200px', minHeight: '500px', paddingRight: '8px' }}>
                 {/* Current time line indicator */}
                 <div
@@ -772,6 +881,61 @@ export default function DailyTimelineView({
               </div>
             </div>
       </div>
+      
+      {/* Floating scrollbar indicator for mobile calendar view */}
+      {mobileView === 'calendar' && (
+        <div 
+          className="block md:hidden"
+          style={{
+            position: 'fixed',
+            bottom: '0',
+            left: '0',
+            right: '0',
+            height: '80px',
+            backgroundColor: 'rgba(59, 130, 246, 0.95)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '12px 20px',
+            zIndex: 9999,
+            boxShadow: '0 -4px 12px rgba(0, 0, 0, 0.2)',
+            borderTop: '3px solid white',
+          }}
+        >
+          <div style={{ color: 'white', fontSize: '12px', fontWeight: 'bold', marginBottom: '8px' }}>
+            📱 SCROLL BAR (drag or tap)
+          </div>
+          <div 
+            onClick={handleTrackClick}
+            style={{
+              width: '100%',
+              height: '40px',
+              backgroundColor: 'rgba(255, 255, 255, 0.3)',
+              borderRadius: '20px',
+              position: 'relative',
+              border: '2px solid white',
+            }}
+          >
+            <div
+              ref={scrollThumbRef}
+              onMouseDown={handleScrollThumbDrag}
+              onTouchStart={handleScrollThumbDrag}
+              style={{
+                position: 'absolute',
+                height: '100%',
+                left: `${scrollProgress * (100 - thumbWidth) / 100}%`,
+                width: `${thumbWidth}%`,
+                minWidth: '60px',
+                backgroundColor: 'white',
+                borderRadius: '18px',
+                cursor: 'grab',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

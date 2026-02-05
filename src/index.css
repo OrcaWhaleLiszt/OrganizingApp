@@ -139,6 +139,91 @@ body {
   visibility: visible !important;
 }
 
+/* Safari-specific scrollbar fix */
+@supports (-webkit-overflow-scrolling: touch) {
+  .scrollbar-thin::-webkit-scrollbar {
+    -webkit-appearance: none;
+    display: block !important;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    display: block !important;
+  }
+}
+
+/* Custom floating scrollbar indicator for mobile */
+.timeline-scroll-indicator {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: linear-gradient(to top, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.95));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  z-index: 200;
+  pointer-events: none;
+  box-shadow: 0 -6px 12px rgba(0, 0, 0, 0.15);
+  border-top: 2px solid #e5e7eb;
+}
+
+.timeline-scroll-indicator .scroll-track {
+  flex: 1;
+  height: 40px;
+  background: #cbd5e1;
+  border-radius: 20px;
+  position: relative;
+  pointer-events: auto;
+  touch-action: pan-x;
+  cursor: pointer;
+  border: 2px solid #94a3b8;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.timeline-scroll-indicator .scroll-thumb {
+  position: absolute;
+  height: 100%;
+  background: #3b82f6;
+  border-radius: 18px;
+  transition: background 0.2s;
+  pointer-events: auto;
+  touch-action: pan-x;
+  cursor: grab;
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.4);
+  min-width: 60px;
+}
+
+.timeline-scroll-indicator .scroll-thumb:active {
+  background: #1d4ed8;
+  cursor: grabbing;
+  box-shadow: 0 4px 8px rgba(29, 78, 216, 0.6);
+}
+
+/* Gradient indicators for scroll direction */
+.scroll-gradient-left {
+  position: absolute;
+  left: 0;
+  top: 40px;
+  bottom: 50px;
+  width: 40px;
+  background: linear-gradient(to right, rgba(59, 130, 246, 0.15), transparent);
+  pointer-events: none;
+  z-index: 150;
+}
+
+.scroll-gradient-right {
+  position: absolute;
+  right: 0;
+  top: 40px;
+  bottom: 50px;
+  width: 40px;
+  background: linear-gradient(to left, rgba(59, 130, 246, 0.15), transparent);
+  pointer-events: none;
+  z-index: 150;
+}
+
 /* Hide scrollbar for specific elements */
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
